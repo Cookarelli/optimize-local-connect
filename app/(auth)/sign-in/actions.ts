@@ -1,8 +1,9 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { getAppOrigin } from "@/src/lib/auth/origin";
+import { safeInternalPath } from "@/src/lib/auth/routing";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 export type AuthState = {
@@ -25,6 +26,7 @@ export async function signInWithPassword(
     email: formData.get("email"),
     password: formData.get("password"),
   });
+  const next = safeInternalPath(formData.get("next")?.toString());
 
   if (!input.success) {
     return { status: "error", message: input.error.issues[0]?.message };
@@ -38,7 +40,7 @@ export async function signInWithPassword(
     return { status: "error", message: "Sign-in is not configured yet. Add the Supabase environment values." };
   }
 
-  redirect("/dashboard");
+  redirect(next);
 }
 
 export async function sendMagicLink(
@@ -49,12 +51,15 @@ export async function sendMagicLink(
   if (!email.success) return { status: "error", message: email.error.issues[0]?.message };
 
   try {
-    const requestHeaders = await headers();
-    const origin = requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL;
+    const origin = await getAppOrigin();
+    const next = safeInternalPath(formData.get("next")?.toString());
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.signInWithOtp({
       email: email.data,
-      options: { emailRedirectTo: `${origin}/auth/callback?next=/dashboard` },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     if (error) return { status: "error", message: "We could not send the sign-in link." };
   } catch {
@@ -62,6 +67,22 @@ export async function sendMagicLink(
   }
 
   return { status: "success", message: "Check your inbox for a secure sign-in link." };
+}
+
+export async function signInWithGoogle(formData: FormData) {
+  const origin = await getAppOrigin();
+  const next = safeInternalPath(formData.get("next")?.toString());
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      queryParams: { prompt: "select_account" },
+    },
+  });
+
+  if (error || !data.url) redirect("/sign-in?error=oauth_start_failed");
+  redirect(data.url);
 }
 
 export async function signOut() {

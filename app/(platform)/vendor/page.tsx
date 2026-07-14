@@ -1,0 +1,20 @@
+import { ClipboardCheck, FileText, Receipt, Wrench } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getRoleHome } from "@/src/lib/auth/routing";
+import { requireUser } from "@/src/lib/auth/session";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+
+export default async function VendorDashboardPage() {
+  const user = await requireUser();
+  const membership = user.memberships[0];
+  if (!membership || membership.organizationType !== "vendor" || !["owner", "admin", "vendor", "technician"].includes(membership.role)) redirect(getRoleHome(user));
+  const supabase = await createSupabaseServerClient();
+  const [opportunities, quotes, workOrders, invoices] = await Promise.all([
+    supabase.from("service_requests").select("id", { count: "exact", head: true }).in("status", ["open", "matching", "quoted"]),
+    supabase.from("quotes").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).eq("status", "submitted"),
+    supabase.from("work_orders").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).in("status", ["scheduled", "en_route", "on_site", "blocked"]),
+    supabase.from("invoices").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).in("status", ["issued", "partially_paid", "overdue"]),
+  ]);
+  const metrics = [["Matched opportunities", opportunities.count ?? 0, ClipboardCheck], ["Open quotes", quotes.count ?? 0, FileText], ["Active work orders", workOrders.count ?? 0, Wrench], ["Outstanding invoices", invoices.count ?? 0, Receipt]] as const;
+  return <div><p className="text-sm font-semibold text-emerald-700">Vendor operations</p><h1 className="mt-1 text-3xl font-semibold tracking-[-.035em] text-slate-950 sm:text-4xl">Welcome to {membership.organizationName}.</h1><p className="mt-2 text-sm text-slate-500">Manage opportunities, quotes, field work, and payments from one workspace.</p><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value.toLocaleString()}</p></div><span className="grid size-10 place-items-center rounded-xl bg-emerald-50"><Icon className="size-5 text-emerald-700" /></span></div></article>)}</section></div>;
+}

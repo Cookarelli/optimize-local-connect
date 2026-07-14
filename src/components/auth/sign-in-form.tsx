@@ -2,12 +2,13 @@
 
 import { useActionState } from "react";
 import { ArrowRight, KeyRound, LoaderCircle, Mail } from "lucide-react";
-import { signInWithPassword, sendMagicLink, type AuthState } from "@/app/(auth)/sign-in/actions";
+import { signInWithGoogle, signInWithPassword, sendMagicLink, type AuthState } from "@/app/(auth)/sign-in/actions";
+import { AUTH_PROVIDERS } from "@/src/lib/auth/providers";
 import { Button } from "@/src/components/ui/button";
 
 const initialState: AuthState = { status: "idle" };
 
-export function SignInForm() {
+export function SignInForm({ next = "/dashboard" }: { next?: string }) {
   const [passwordState, passwordAction, passwordPending] = useActionState(
     signInWithPassword,
     initialState,
@@ -21,6 +22,7 @@ export function SignInForm() {
   return (
     <div className="space-y-5">
       <form action={passwordAction} className="space-y-4">
+        <input type="hidden" name="next" value={next} />
         <div>
           <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-800">
             Work email
@@ -39,9 +41,7 @@ export function SignInForm() {
           </div>
         </div>
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-800">
-            Password
-          </label>
+          <div className="mb-1.5 flex items-center justify-between"><label htmlFor="password" className="block text-sm font-medium text-slate-800">Password</label><a href="/forgot-password" className="text-xs font-semibold text-emerald-700 hover:underline">Forgot password?</a></div>
           <div className="relative">
             <KeyRound aria-hidden="true" className="absolute left-3.5 top-3.5 size-4 text-slate-400" />
             <input
@@ -67,6 +67,7 @@ export function SignInForm() {
 
       <form action={magicAction}>
         <input type="hidden" name="email" value="" data-magic-email />
+        <input type="hidden" name="next" value={next} />
         <Button
           type="submit"
           variant="secondary"
@@ -83,6 +84,22 @@ export function SignInForm() {
           Email me a secure sign-in link
         </Button>
       </form>
+
+      <form action={signInWithGoogle}>
+        <input type="hidden" name="next" value={next} />
+        <Button type="submit" variant="secondary" className="w-full">
+          <span aria-hidden="true" className="mr-2 grid size-5 place-items-center rounded-full border border-slate-300 text-xs font-bold text-slate-700">G</span>
+          Continue with Google
+        </Button>
+      </form>
+
+      <div className="grid grid-cols-2 gap-3">
+        {AUTH_PROVIDERS.filter((provider) => !provider.enabled).map((provider) => (
+          <button key={provider.id} type="button" disabled className="min-h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-400">
+            {provider.label} <span className="sr-only">login</span><span className="ml-1 text-[10px] uppercase tracking-wider">Soon</span>
+          </button>
+        ))}
+      </div>
 
       {state.message ? (
         <p

@@ -22,7 +22,7 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
 
   if (!user) return null;
 
-  const [{ data: profile }, { data: memberships, error }] = await Promise.all([
+  const [{ data: profile }, { data: memberships, error }, { data: preferences }] = await Promise.all([
     supabase
       .from("profiles")
       .select("full_name, avatar_url, is_super_admin")
@@ -33,6 +33,11 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
       .select("id, organization_id, role, organizations(name, type)")
       .eq("user_id", user.id)
       .eq("status", "active"),
+    supabase
+      .from("user_preferences")
+      .select("active_organization_id")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   if (error) throw new Error(`Unable to load memberships: ${error.message}`);
@@ -51,7 +56,8 @@ export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
         organizationName: membership.organizations!.name,
         organizationType: membership.organizations!.type,
         role: membership.role,
-      })),
+      }))
+      .sort((a, b) => Number(b.organizationId === preferences?.active_organization_id) - Number(a.organizationId === preferences?.active_organization_id)),
   };
 });
 

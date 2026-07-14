@@ -6,7 +6,9 @@ The operating system connecting property management teams with verified local se
 
 - Multi-tenant PostgreSQL schema covering cities, markets, organizations, properties, vendors, requests, quotes, work orders, billing, communications, warranties, appliances, analytics, and AI interactions
 - Supabase Auth with password and magic-link sign-in
+- Google OAuth, password recovery, expiring organization invitations, and provider-ready Microsoft/Apple login
 - Server-side session loading and authorization
+- Role-routed Admin, Property Manager, Vendor, Technician, and future Resident entry points
 - PostgreSQL row-level security for tenant isolation and role enforcement
 - Seven application roles with an explicit permission registry
 - Mobile-first public experience and authenticated operations shell
@@ -47,4 +49,4 @@ npm run build
 
 Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the acting user first, and write an `audit_events` row in the same business transaction.
 
-See `docs/architecture.md`, `docs/permissions.md`, and `docs/database-schema.md` before adding a feature.
+See `docs/architecture.md`, `docs/permissions.md`, `docs/database-schema.md`, and `docs/authentication.md` before adding a feature.

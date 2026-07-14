@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Supabase PostgreSQL schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the complete operating domains. Migration `202607140003_storage_policies.sql` creates the private file bucket and organization/uploader path policies.
+The Supabase PostgreSQL schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the complete operating domains. Migration `202607140003_storage_policies.sql` creates the private file bucket and organization/uploader path policies. Migration `202607140004_production_auth.sql` adds active organization context and secure organization invitations.
 
 ## Conventions
 
@@ -20,13 +20,14 @@ The Supabase PostgreSQL schema is defined by ordered, forward-only migrations in
 | Table | Purpose and relationships | Access/index notes |
 |---|---|---|
 | `profiles` | One application profile per `auth.users` row. Holds display data and the tightly protected global super-admin flag. | Self-readable/updateable; shared organization members may read; privilege changes require trusted server context. |
-| `user_preferences` | Locale, timezone, channel defaults, and quiet hours for one profile. | Primary key is `user_id`; self-only RLS. |
+| `user_preferences` | Locale, timezone, channel defaults, quiet hours, and validated active organization context for one profile. | Primary key is `user_id`; self-only RLS. |
 | `cities` | Unlimited canonical city registry with subdivision, country, timezone, and optional coordinates. | Unique by country, state, and slug; authenticated read; super-admin write. |
 | `markets` | Named marketplace operating regions. A market is not limited to one city. | Globally unique slug; authenticated read; super-admin write. |
 | `market_cities` | Many-to-many city membership in a market. | Composite primary key; one partial unique primary-city index per market. |
 | `organizations` | Tenant root for property-management and vendor companies. | Unique slug; members read; owners/admins update; only platform administration creates. |
 | `organization_markets` | Markets in which an organization operates. | Composite primary key; indexed by market; admins manage. |
 | `organization_members` | User role and lifecycle status inside an organization. A user may hold different roles in different tenants. | Unique organization/user pair; owner/admin escalation is prevented by RLS. |
+| `organization_invitations` | Expiring, email-bound invitation to join an organization with a specific role; only a SHA-256 token hash is retained. | Unique live organization/email invitation; owners/admins inspect and revoke, security-definer functions create and accept. |
 | `property_manager_profiles` | Manager-specific licensing and employment fields attached to a membership. | One-to-one with organization membership. |
 | `property_manager_assignments` | Effective-dated manager-to-property assignment. | Composite primary key; one active primary manager per property. |
 

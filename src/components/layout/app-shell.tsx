@@ -10,20 +10,28 @@ import {
   Users,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/sign-in/actions";
+import { switchOrganization } from "@/app/(platform)/actions";
+import type { Permission } from "@/src/domain/auth/roles";
 import type { AppUser } from "@/src/domain/auth/types";
+import { can } from "@/src/lib/auth/authorization";
+import { getRoleHome } from "@/src/lib/auth/routing";
 import { Logo } from "@/src/components/brand/logo";
 
-const nav = [
-  { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Properties", href: "/properties", icon: Building2 },
-  { label: "Requests", href: "/requests", icon: ClipboardList },
-  { label: "Marketplace", href: "/marketplace", icon: Store },
-  { label: "Team", href: "/team", icon: Users },
+const nav: { label: string; href: string; icon: typeof LayoutDashboard; permission?: Permission }[] = [
+  { label: "Properties", href: "/properties", icon: Building2, permission: "properties:view" },
+  { label: "Requests", href: "/requests", icon: ClipboardList, permission: "service_requests:view" },
+  { label: "Marketplace", href: "/marketplace", icon: Store, permission: "marketplace:view" },
+  { label: "Team", href: "/team", icon: Users, permission: "members:view" },
 ];
 
 export function AppShell({ children, user }: { children: React.ReactNode; user: AppUser }) {
   const activeMembership = user.memberships[0];
   const displayName = user.fullName || user.email.split("@")[0];
+  const organizationId = activeMembership?.organizationId;
+  const visibleNav = [
+    { label: "Overview", href: getRoleHome(user), icon: LayoutDashboard },
+    ...nav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
+  ];
 
   return (
     <div className="min-h-dvh bg-slate-50">
@@ -34,9 +42,10 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           <p className="mt-1 truncate text-sm font-semibold">{activeMembership?.organizationName ?? "Platform operations"}</p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400"><MapPin className="size-3.5" /> All assigned markets</p>
         </div>
+        {user.memberships.length > 1 ? <form action={switchOrganization} className="mt-3 flex gap-2"><label htmlFor="organization-switcher" className="sr-only">Active organization</label><select id="organization-switcher" name="organizationId" defaultValue={activeMembership?.organizationId} className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-800">{user.memberships.map((membership) => <option key={membership.id} value={membership.organizationId}>{membership.organizationName}</option>)}</select><button type="submit" className="rounded-lg bg-emerald-700 px-2.5 text-xs font-bold text-white">Go</button></form> : null}
         <nav aria-label="Application navigation" className="mt-5 space-y-1">
-          {nav.map(({ label, href, icon: Icon }, index) => (
-            <Link key={href} href={href} aria-current={index === 0 ? "page" : undefined} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${index === 0 ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}>
+          {visibleNav.map(({ label, href, icon: Icon }, index) => (
+            <Link key={href} href={href} className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition ${index === 0 ? "bg-emerald-50 text-emerald-800" : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"}`}>
               <Icon aria-hidden="true" className="size-4.5" /> {label}
             </Link>
           ))}
@@ -55,7 +64,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
         <details className="relative">
           <summary className="grid size-11 cursor-pointer list-none place-items-center rounded-xl border border-slate-200" aria-label="Open navigation"><Menu className="size-5" /></summary>
           <nav aria-label="Mobile application navigation" className="absolute right-0 top-13 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-            {nav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Icon className="size-4.5" />{label}</Link>)}
+            {visibleNav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Icon className="size-4.5" />{label}</Link>)}
             <Link href="/settings" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Settings className="size-4.5" />Settings</Link>
             <form action={signOut}><button type="submit" className="min-h-11 w-full rounded-xl px-3 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50">Sign out</button></form>
           </nav>

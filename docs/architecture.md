@@ -45,6 +45,8 @@ There are two required enforcement points:
 
 Client-side checks are presentational only. Any new write must be authorized on the server and permitted by RLS. Cross-tenant IDs are never trusted from a form; the server resolves and verifies their relationships.
 
+Authentication sessions are refreshed in `proxy.ts`, then revalidated by protected layouts and server actions. Successful authentication routes through `/dashboard` to a role-specific Admin, Property Manager, Vendor, or Resident surface. Organization context comes from an active membership and a validated server-side preference; arbitrary organization identifiers are never trusted.
+
 ## Data access
 
 Server Components are the default for authenticated reads. Route handlers and Server Actions handle commands. React Query is reserved for client-owned experiences that benefit from cache invalidation, optimistic UI, polling, or background refetching.

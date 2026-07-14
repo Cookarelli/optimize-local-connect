@@ -6,7 +6,8 @@ import { Logo } from "@/src/components/brand/logo";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function SignInPage() {
+export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+  const params = await searchParams;
   return (
     <main className="grid min-h-dvh bg-stone-50 lg:grid-cols-[1.05fr_.95fr]">
       <section className="hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
@@ -31,7 +32,8 @@ export default function SignInPage() {
             <p className="text-sm font-semibold text-emerald-700">Welcome back</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Sign in to Property OS</h2>
             <p className="mb-7 mt-2 text-sm leading-6 text-slate-500">Access is invite-only for verified property teams and service partners.</p>
-            <SignInForm />
+            <SignInForm next={params.next} />
+            {params.error ? <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">That sign-in link could not be completed. Please try again.</p> : null}
           </div>
           <p className="mt-6 text-center text-sm text-slate-500">Need access? <Link href="/#early-access" className="font-semibold text-slate-900 underline-offset-4 hover:underline">Request early access</Link></p>
         </div>
