@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-Optimize Local Connect™ is a multi-tenant, AI-ready community platform from Optimize Local™. Its shared core connects local organizations, providers, people, markets, transactions, communications, and trustworthy decision support. Property Management is the first industry vertical, not the boundary of the platform.
+Optimize Local Connect™ is a multi-tenant, AI-powered operating platform for community marketplaces. Its shared core connects local organizations, providers, people, markets, transactions, communications, and trustworthy decision support. Property Management is Version 1, not the boundary of the platform.
 
 The launch vertical remains a transactional marketplace—not a directory. Property-management organizations own properties and service requests. Provider organizations own verification profiles, service categories, quotes, and technician teams. Markets connect both sides by geography without weakening organization isolation.
 
@@ -17,11 +17,13 @@ src/
   domain/
     auth/                    framework-free roles and permissions
     platform/                canonical brand and shared terminology
-    verticals/               versioned industry registry and capability contracts
+    verticals/               versioned industry registry and reusable module contracts
+    optimize-ai/             provider-neutral decision and capability contracts
   features/                  shared and vertical-specific UI, queries, and commands
   lib/
     auth/                    session and authorization adapters
     supabase/                browser/server infrastructure clients
+    optimize-ai/             capability-based model-provider routing
 supabase/migrations/         forward-only schema, indexes, functions, and RLS
 docs/                        durable engineering and product contracts
 ```
@@ -30,9 +32,9 @@ New shared capabilities belong under `src/features/<capability>`. Vertical-speci
 
 ## Shared core and vertical modules
 
-The shared core owns identity, organizations, memberships, cities, markets, provider discovery, communication, files, notifications, analytics, audit history, outbox delivery, and AI governance. Vertical modules contribute domain entities, workflows, navigation, permission requirements, events, and AI tools.
+The shared core owns identity, organizations, memberships, cities, markets, provider discovery, communication, files, notifications, analytics, audit history, outbox delivery, and Optimize AI™. Vertical modules contribute only domain entities, workflows, navigation, permission requirements, events, and optimization policies.
 
-`industry_verticals` is the database catalog. `organization_verticals` activates one or more verticals for an organization and identifies its primary experience. `src/domain/verticals/registry.ts` is the application contract used for capabilities and navigation. Database and application definitions must change together.
+`industry_verticals` is the industry catalog. `platform_modules` catalogs reusable core and extension modules. `vertical_modules` composes them into each industry, while `organization_verticals` activates one or more verticals for an organization. `src/domain/verticals/registry.ts` is the application contract used for version, capabilities, and navigation. Database and application definitions must change together.
 
 Existing `property_*` and `vendor_*` names intentionally remain. They are stable launch-vertical contracts used by migrations, PostgREST, RLS, and deployed clients. User-facing language may call vendors “Local Providers” without renaming technical roles or tables.
 
@@ -70,9 +72,9 @@ Supabase is the system of record. The anon key is safe to expose only because RL
 
 Property discovery combines city coverage, category, and provider service offerings. Future verticals reuse the same geographic primitives and add only their domain-specific eligibility rules.
 
-## AI readiness
+## Optimize AI™
 
-AI capabilities consume structured events and declared vertical capabilities rather than coupling model calls to transactions. `outbox_events` records durable post-commit work; `audit_events` provides traceability; AI tables retain conversations, tool runs, provenance, feedback, and approval state. Workers are idempotent, version prompts and schemas, and require human approval for high-impact actions.
+Optimize AI’s mission is **Optimize every decision.** Its deterministic core ranks options against versioned, explainable policies. External model providers are optional adapters resolved by capability, modality, health, and priority; domain code never branches on provider names. `outbox_events` records durable post-commit work, `audit_events` provides traceability, and Optimize AI tables retain conversations, tool runs, inputs, candidate contributions, provider/model provenance, feedback, and approval state. High-impact actions require human approval. See `docs/optimize-ai.md`.
 
 ## Operational standards
 

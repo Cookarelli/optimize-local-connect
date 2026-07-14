@@ -158,7 +158,7 @@ export default function CompanyPage() {
           </div>
           <div className="rounded-[2rem] bg-slate-950 p-7 text-white sm:p-10">
             <Logo inverse />
-            <p className="mt-12 text-xl leading-8 text-slate-300">{PLATFORM_BRAND.parentName} builds AI-powered community technology. {PLATFORM_BRAND.productName} is its shared platform, launching first with Property Management and designed to support future industries on the same trusted foundation.</p>
+            <p className="mt-12 text-xl leading-8 text-slate-300">{PLATFORM_BRAND.parentName} builds AI-powered community technology. {PLATFORM_BRAND.productName} is its shared operating platform, {PLATFORM_BRAND.aiName} optimizes decisions across it, and Property Management is Version 1 of a reusable community-marketplace foundation.</p>
             <div className="mt-10 grid gap-3 sm:grid-cols-2">
               {["Local-first intelligence", "Verified business networks", "Human-centered AI", "Measurable community impact"].map((item) => <span key={item} className="flex items-center gap-2 text-sm text-slate-300"><BadgeCheck className="size-4 text-emerald-400" />{item}</span>)}
             </div>

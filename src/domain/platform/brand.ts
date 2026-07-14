@@ -1,11 +1,13 @@
 export const PLATFORM_BRAND = {
   parentName: "Optimize Local™",
   productName: "Optimize Local Connect™",
+  aiName: "Optimize AI™",
+  aiMission: "Optimize every decision.",
   shortName: "Connect™",
   companyTagline: "Optimize Local. Maximize Savings.",
   mission: "Save Time. Save Money. Strengthen Communities.",
   manifesto: "We’re not building software. We’re building stronger local economies—one optimized decision at a time.",
-  description: "An AI-ready community platform connecting local organizations with trusted providers, shared workflows, and better decisions.",
+  description: "An AI-powered community platform connecting local organizations with trusted providers, shared workflows, and better decisions.",
   philosophy: "Optimize Local builds AI-powered technology that helps communities keep more money local by connecting people with trusted businesses, helping them make smarter decisions, and creating measurable economic impact.",
   vision: "A future where every local decision strengthens the community behind it.",
 } as const;

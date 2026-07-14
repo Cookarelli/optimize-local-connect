@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the Property Management operating domains. Migration `202607140003_storage_policies.sql` creates the private file bucket and organization/uploader path policies. Migration `202607140004_production_auth.sql` adds active organization context and secure organization invitations. Migration `202607140005_platform_verticals.sql` adds the shared industry catalog and activates Property Management for existing organizations without renaming backend contracts.
+The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the Property Management operating domains. Migration `202607140003_storage_policies.sql` creates private file policies. Migration `202607140004_production_auth.sql` adds active organization context and secure invitations. Migration `202607140005_platform_verticals.sql` adds industry activation. Migration `202607140006_optimize_ai.sql` introduces Optimize AI™ capability routing, decision policies, auditable optimization runs, multimodal inputs, and the authenticated recording function. Migration `202607140007_future_vertical_modules.sql` adds the reusable module catalog and registers the future community-marketplace roadmap while keeping Property Management as Version 1.
 
 ## Conventions
 
@@ -27,6 +27,8 @@ The Optimize Local Connect™ Supabase schema is defined by ordered, forward-onl
 | `organizations` | Tenant root for property-management and vendor companies. | Unique slug; members read; owners/admins update; only platform administration creates. |
 | `industry_verticals` | Shared catalog of installable industry modules and their lifecycle state. | Immutable unique key; authenticated users read launch/active rows; super admins manage. |
 | `organization_verticals` | Activates one or more industry verticals for an organization and identifies its primary experience. | Composite organization/vertical key; one active primary vertical per organization; organization members read. |
+| `platform_modules` | Reusable shared-core and vertical-extension module catalog. | Immutable key; authenticated catalog read; super-admin management. |
+| `vertical_modules` | Declarative module composition for one industry vertical. | Composite vertical/module key; every planned vertical shares the same core modules. |
 | `organization_markets` | Markets in which an organization operates. | Composite primary key; indexed by market; admins manage. |
 | `organization_members` | User role and lifecycle status inside an organization. A user may hold different roles in different tenants. | Unique organization/user pair; owner/admin escalation is prevented by RLS. |
 | `organization_invitations` | Expiring, email-bound invitation to join an organization with a specific role; only a SHA-256 token hash is retained. | Unique live organization/email invitation; owners/admins inspect and revoke, security-definer functions create and accept. |
@@ -114,6 +116,13 @@ The following launch-vertical tables retain their original technical names for m
 | `ai_messages` | Structured user, assistant, system, and tool content plus token accounting. | Conversation/time/ID index. |
 | `ai_tool_runs` | Idempotent tool execution with input/output, failure, approval, and lifecycle state. | Unique idempotency key and active-status queue index. High-impact runs support mandatory approval. |
 | `ai_feedback` | One positive or negative user rating per AI message. | Unique message/user pair. |
+| `ai_capabilities` | Provider-neutral Optimize AI capability and modality catalog. | Authenticated catalog read; super-admin management. |
+| `ai_provider_connections` | Configured adapter connection using a secret reference rather than raw credentials. | Global or organization scope; owner/admin management; routing index. |
+| `ai_provider_capabilities` | Maps provider connections to supported capabilities and model references. | Capability/priority routing index; inherits connection management scope. |
+| `ai_optimization_policies` | Versioned objective weights and constraints, optionally scoped to an organization and vertical. | Immutable version history and one active policy per scope/key. |
+| `ai_optimization_runs` | Auditable decision execution with request, policy, provider/model provenance, result, and confidence. | Requester and organization/time indexes; requester/admin read. |
+| `ai_optimization_candidates` | Ranked candidates with raw metrics, normalized values, and criterion contributions. | Unique rank and entity per run; entity history index. |
+| `ai_run_inputs` | Governed text, structured, voice, image, or document input metadata. | References private files; inherits run access. |
 | `audit_events` | Append-only security and business event history. | Organization/time index; administrators read and members append attributed actions. |
 | `outbox_events` | Transactional queue for integrations, delivery, analytics projection, and AI processing. | Partial pending/failed availability index; workers process idempotently. |
 

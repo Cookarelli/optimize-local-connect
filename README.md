@@ -1,6 +1,6 @@
 # Optimize Local Connect™
 
-An AI-ready community platform from **Optimize Local™** that connects local organizations with trusted providers, shared workflows, and better decisions.
+An AI-powered community operating platform from **Optimize Local™** that connects local organizations with trusted providers, shared workflows, and better decisions.
 
 **Company tagline:** Optimize Local. Maximize Savings.
 
@@ -12,19 +12,19 @@ An AI-ready community platform from **Optimize Local™** that connects local or
 
 Optimize Local Connect is not a rebuild of the original property platform. It preserves the production authentication, permissions, marketplace, work-order, review, role, and Supabase foundations while making industry context explicit and modular.
 
-Property Management is the first launch vertical. Future industries plug into the same identity, organization, market, provider, communication, analytics, audit, event, and AI foundations through a versioned vertical registry. Existing property- and vendor-named database tables remain stable to protect migrations, APIs, policies, and deployed data.
+Property Management is Version 1. HOAs, Homeowners, Realtors, Local Governments, Schools, Healthcare, Nonprofits, and Service Marketplaces are registered as planned community-marketplace verticals. Every vertical composes the same reusable identity, organization, geography, provider marketplace, communication, analytics, audit, event, and Optimize AI™ foundations. Existing property- and vendor-named database tables remain stable to protect migrations, APIs, policies, and deployed data.
 
 ## What is implemented
 
 - Multi-tenant PostgreSQL schema for shared platform foundations and the Property Management launch vertical
 - Unlimited cities and markets with organization-scoped access
-- Additive industry-vertical registry and organization activation model
+- Additive industry-vertical registry, reusable module catalog, and organization activation model
 - Local provider marketplace, service requests, quotes, work orders, invoices, reviews, warranties, and appliance inventory
 - Supabase Auth with password, magic-link, Google OAuth, recovery, and expiring organization invitations
 - Provider-ready Microsoft and Apple sign-in configuration
 - Seven application roles with explicit permissions and PostgreSQL row-level security
 - Mobile-first public experience and authenticated, role-routed workspaces
-- Transactional outbox, immutable audit events, structured analytics, and governed AI interaction foundations
+- Optimize AI™ provider-neutral decision engine, auditable ranking API, governed tool execution, transactional outbox, and immutable audit events
 
 ## Stack
 
@@ -60,4 +60,4 @@ npm run build
 
 Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the actor, and write an `audit_events` row in the same business transaction.
 
-Read [architecture](docs/architecture.md), [vertical modules](docs/platform-verticals.md), [permissions](docs/permissions.md), [database schema](docs/database-schema.md), and [authentication](docs/authentication.md) before adding a capability.
+Read [architecture](docs/architecture.md), [Optimize AI](docs/optimize-ai.md), [vertical modules](docs/platform-verticals.md), [permissions](docs/permissions.md), [database schema](docs/database-schema.md), and [authentication](docs/authentication.md) before adding a capability.
