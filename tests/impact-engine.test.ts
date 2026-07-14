@@ -58,3 +58,12 @@ test("tenant summaries and platform reports enforce separate authorization",()=>
   assert.match(migration,/get_platform_impact_summary[\s\S]*super admin required/);
   assert.match(migration,/alter table public\.impact_observations enable row level security/);
 });
+
+test("community reporting includes adoption counts and future city comparisons",()=>{
+  const communityMigration=readFileSync(new URL("../supabase/migrations/202607140012_community_impact_reporting.sql",import.meta.url),"utf8");
+  for(const metric of ["communities_served","verified_vendor_count","property_manager_count"]) assert.match(communityMigration,new RegExp(`'${metric}'`));
+  assert.match(communityMigration,/create or replace function public\.get_city_impact_summary/);
+  assert.match(communityMigration,/verification_type='trade_license'/);
+  assert.match(communityMigration,/verification_type='insurance'/);
+  assert.match(communityMigration,/if not public\.is_super_admin\(\) then raise exception 'super admin required'/);
+});

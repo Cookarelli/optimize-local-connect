@@ -16,6 +16,10 @@ export const SHARED_PLATFORM_MODULES = [
   "optimize_ai",
 ] as const;
 
+export const FUTURE_SHARED_PLATFORM_MODULES = [
+  { key: "optimize_local_exchange", name: "Optimize Local Exchange", targetVersion: 3, status: "planned", uiExposed: false },
+] as const;
+
 export type VerticalDefinition = {
   key: string;
   name: string;

@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes, work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` adds the Property Management operating domains. Migrations `003`–`008` add storage security, production authentication, vertical composition, Optimize AI™, future modules, and the Founding Fifty. Migration `202607140009_impact_engine.sql` adds governed impact methodologies, immutable observations, transactional rollups, summaries, snapshots, and provider-neutral AI report requests. Migration `202607140010_vendor_marketplace_memberships.sql` governs marketplace plans, entitlement enforcement, Founding Partner capacity, commercial media, coupons, and marketplace search.
+The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes, work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` adds the Property Management operating domains. Migrations `003`–`008` add storage security, production authentication, vertical composition, Optimize AI™, future modules, and the Founding Fifty. Migration `202607140009_impact_engine.sql` adds governed impact methodologies, immutable observations, transactional rollups, summaries, snapshots, and provider-neutral AI report requests. Migration `202607140010_vendor_marketplace_memberships.sql` governs marketplace plans, entitlement enforcement, Founding Partner capacity, commercial media, coupons, and marketplace search. Migration `202607140011_optimize_local_exchange.sql` adds the UI-hidden Version 3 exchange architecture. Migration `202607140012_community_impact_reporting.sql` adds adoption metrics and city comparison reporting.
 
 ## Conventions
 
@@ -42,6 +42,17 @@ The Optimize Local Connect™ Supabase schema is defined by ordered, forward-onl
 | `daily_impact_metrics` | Transactionally maintained dashboard and reporting rollups. | Unique organization/date/market scope and date/market indexes. |
 | `impact_snapshots` | Reproducible point-in-time reporting inputs. | Organization and scope indexes; member/Super Admin RLS. |
 | `impact_report_requests` | Provider-neutral future AI reporting queue. | Optional provider connection; requester/status indexes. |
+| `exchange_business_profiles` | Organization opt-in, capacity, distance, and matching preferences for Version 3. | Organization primary key; closed by default. |
+| `exchange_business_needs` | Published service demand and timing. | City/category discovery and organization/status indexes. |
+| `exchange_business_offers` | Published unused service capacity and availability. | City/category discovery and organization/status indexes. |
+| `exchange_trade_requests` | Broadcast or targeted request lifecycle. | Human request number; requester, target, and open-request indexes. |
+| `exchange_trade_proposals` | Versioned response to a trade request. | Unique request/proposer/proposal number. |
+| `exchange_proposal_items` | Offered and requested proposal terms. | Proposal/direction/sort index. |
+| `exchange_trades` | Accepted agreement snapshot and durable history. | Unique request and accepted proposal; both-party history indexes. |
+| `exchange_trade_deliverables` | Party-owned obligations, delivery evidence, and acceptance. | Trade/status/due index. |
+| `exchange_trade_ratings` | Reciprocal completed-trade ratings. | One rating per trade/rater; published rated-organization index. |
+| `exchange_match_runs` / `exchange_match_candidates` | Provider-neutral explainable capacity matching. | Requester/status and unique rank constraints. |
+| `exchange_credit_*` | Disabled future credit program and balanced double-entry ledger. | Service-only posting; unavailable until explicit activation. |
 | `organization_markets` | Markets in which an organization operates. | Composite primary key; indexed by market; admins manage. |
 | `organization_members` | User role and lifecycle status inside an organization. A user may hold different roles in different tenants. | Unique organization/user pair; owner/admin escalation is prevented by RLS. |
 | `organization_invitations` | Expiring, email-bound invitation to join an organization with a specific role; only a SHA-256 token hash is retained. | Unique live organization/email invitation; owners/admins inspect and revoke, security-definer functions create and accept. |

@@ -8,6 +8,8 @@ Every metric is classified as measured, estimated, or derived. Estimates retain 
 
 The initial catalog includes estimated money and hours saved, average savings per work order, vendor and emergency response time, community savings since launch, jobs completed, vendor growth, estimated local spending retained, and portfolio savings.
 
+The Super Admin Community Impact dashboard also reports communities served, currently verified vendors, active Property Management users, and city comparisons. “Communities served” counts distinct cities with a completed-job observation. “Verified vendors” requires a verified profile plus current license and insurance evidence. “Property managers” counts active owner, admin, and property-manager users in active Property Management organizations. City comparisons aggregate immutable city-attributed observations for the selected period and never manufacture values for cities without observations.
+
 ## Data flow
 
 1. Work-order completion automatically records one completed job plus measured vendor and emergency response when source timestamps exist.

@@ -20,6 +20,7 @@ src/
     verticals/               versioned industry registry and reusable module contracts
     optimize-ai/             provider-neutral decision and capability contracts
     impact/                  governed metric definitions and calculation contracts
+    exchange/                Version 3 capacity-exchange contracts (planned; no UI)
   features/                  shared and vertical-specific UI, queries, and commands
   lib/
     auth/                    session and authorization adapters
@@ -81,6 +82,10 @@ Optimize AI’s mission is **Optimize every decision.** Its deterministic core r
 ## Optimize Local Impact Engine
 
 The Impact Engine stores immutable, source-attributed observations against versioned methodologies and maintains transactional daily rollups for dashboards. Automatic lifecycle capture supplies completed jobs, provider response, emergency response, and vendor growth; governed work-order inputs supply estimated savings, hours, and local spending retained. Reproducible snapshots isolate future AI reporting from live mutable operational state. See `docs/impact-engine.md`.
+
+## Optimize Local Exchange™
+
+Exchange is a planned Version 3 shared-core module for matching business needs with unused local capacity. Its schema separates opt-in profiles, needs, offers, requests, proposals, accepted trades, deliverables, reciprocal ratings, provider-neutral AI matching, and a disabled double-entry trade-credit foundation. It has no Version 1 routes or navigation. See `docs/optimize-local-exchange.md`.
 
 ## Operational standards
 

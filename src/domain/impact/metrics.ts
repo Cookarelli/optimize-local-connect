@@ -16,6 +16,10 @@ export const impactSummarySchema = z.object({
   portfolio_savings_cents: numeric.optional(),
   observation_count: numeric.optional(),
   organization_count: numeric.optional(),
+  communities_served: numeric.optional(),
+  verified_vendor_count: numeric.optional(),
+  property_manager_count: numeric.optional(),
+  city_comparison_ready: z.boolean().optional(),
   generated_at: z.string().optional(),
 }).passthrough();
 

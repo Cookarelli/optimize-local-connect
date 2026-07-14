@@ -11,6 +11,7 @@ Every vertical reuses:
 - verified local provider profiles and relationship history
 - notifications, messaging, files, favorites, analytics, audit events, and outbox delivery
 - Optimize AI™ decision optimization, provider routing, conversations, governed tool runs, feedback, provenance, and approvals
+- the planned, disabled Optimize Local Exchange™ Version 3 module without exposing it in Version 1 navigation
 
 ## Definition sources
 

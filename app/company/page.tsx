@@ -140,12 +140,13 @@ export default function CompanyPage() {
         <div className="mx-auto grid max-w-[90rem] gap-14 px-5 sm:px-8 lg:grid-cols-[.65fr_1.35fr] lg:px-12">
           <div><p className="section-kicker">04 · Founder story</p><div className="mt-10 flex items-center gap-3 text-sm font-semibold text-slate-600"><HeartHandshake className="size-5 text-emerald-700" /> Built from a local conviction</div></div>
           <div className="max-w-4xl">
-            <h2 className="text-4xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl">Optimize Local began with a simple observation: communities lose value when good local decisions are harder than they should be.</h2>
+            <h2 className="text-4xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl">The lesson from 2008 was clear: local economies are built on relationships long before they are measured in reports.</h2>
             <div className="mt-10 grid gap-6 text-base leading-8 text-slate-600 md:grid-cols-2">
-              <p>People want to hire businesses they can trust. Local businesses want a fair opportunity to earn lasting relationships. Organizations want to make responsible decisions without adding hours of research and follow-up.</p>
-              <p>The missing piece was not another directory. It was a trusted intelligence layer—technology that connects context, accountability, and action while keeping people in control.</p>
+              <p>During the 2008 recession, our founder saw how quickly uncertainty reached local businesses—and how much resilience came from people choosing to trust, recommend, and support one another. The businesses that endured were often the ones rooted in real relationships with customers, partners, and their communities.</p>
+              <p>That experience shaped Optimize Local. When communities can find trustworthy local businesses, make smarter decisions, and keep more dollars circulating nearby, every transaction can help protect jobs, deepen relationships, and build a stronger local economy.</p>
             </div>
-            <blockquote className="mt-14 border-l-2 border-emerald-600 pl-6 text-3xl font-semibold leading-tight tracking-[-.035em] text-slate-900 sm:text-4xl">“{PLATFORM_BRAND.manifesto}”</blockquote>
+            <p className="mt-8 text-base leading-8 text-slate-600">We are building technology to make that choice easier: not a directory, but an intelligent community platform that helps local businesses earn opportunity on trust and helps organizations understand the impact of where they spend.</p>
+            <blockquote className="mt-14 border-l-2 border-emerald-600 pl-6 text-3xl font-semibold leading-tight tracking-[-.035em] text-slate-900 sm:text-4xl">“We’re not building software.<br /><br />We’re building stronger local economies—<br /><br />one optimized decision at a time.”</blockquote>
           </div>
         </div>
       </section>
