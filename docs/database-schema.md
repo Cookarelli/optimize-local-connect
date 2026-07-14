@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes, work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` adds the Property Management operating domains. Migrations `003`–`008` add storage security, production authentication, vertical composition, Optimize AI™, future modules, and the Founding Fifty. Migration `202607140009_impact_engine.sql` adds governed impact methodologies, immutable observations, transactional rollups, summaries, snapshots, and provider-neutral AI report requests.
+The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes, work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` adds the Property Management operating domains. Migrations `003`–`008` add storage security, production authentication, vertical composition, Optimize AI™, future modules, and the Founding Fifty. Migration `202607140009_impact_engine.sql` adds governed impact methodologies, immutable observations, transactional rollups, summaries, snapshots, and provider-neutral AI report requests. Migration `202607140010_vendor_marketplace_memberships.sql` governs marketplace plans, entitlement enforcement, Founding Partner capacity, commercial media, coupons, and marketplace search.
 
 ## Conventions
 
@@ -64,10 +64,13 @@ The following launch-vertical tables retain their original technical names for m
 | `organization_vendor_relationships` | Private property-company relationship with a vendor, including preferred, paused, and blocked states. | Unique property organization/vendor pair. |
 | `vendor_membership_levels` | Platform subscription tiers, pricing, limits, and JSON entitlements. | Unique code and rank; public-to-authenticated catalog. |
 | `vendor_memberships` | Effective subscription history for a vendor. | Partial unique index permits only one current subscription. |
+| `vendor_membership_events` | Immutable and idempotent commercial membership lifecycle history. | Unique idempotency key; vendor/time index. |
 | `vendor_badges` | Badge definitions and presentation metadata. | Unique code; platform managed. |
 | `vendor_badge_awards` | Effective-dated badge awards, expiry, and revocation. | Active-vendor partial index. |
 | `vendor_verifications` | Individual identity, business, license, insurance, background, tax, and bank checks. | Vendor/status/type and expiry indexes; vendor submits, platform reviews. |
 | `vendor_verification_files` | Evidence files for one verification check. | Composite primary key with restrictive file deletion. |
+| `vendor_marketplace_media` | Marketplace images and Premium-gated video metadata. | Vendor/published/sort index; exactly one file or external URL. |
+| `vendor_coupons` | Premium-gated time-bound vendor offers. | Unique vendor/code; active-marketplace index. |
 | `vendor_reviews` | Verified review for exactly one completed work order, including category ratings and vendor response. | Unique work order; vendor/published and property-organization indexes. |
 
 ## Requests, quotes, and work execution

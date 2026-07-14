@@ -1,4 +1,5 @@
-import { ClipboardCheck, FileText, Receipt, Wrench } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, ClipboardCheck, FileText, Receipt, Sparkles, Wrench } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { requireUser } from "@/src/lib/auth/session";
@@ -9,12 +10,14 @@ export default async function VendorDashboardPage() {
   const membership = user.memberships[0];
   if (!membership || membership.organizationType !== "vendor" || !["owner", "admin", "vendor", "technician"].includes(membership.role)) redirect(getRoleHome(user));
   const supabase = await createSupabaseServerClient();
-  const [opportunities, quotes, workOrders, invoices] = await Promise.all([
+  const [opportunities, quotes, workOrders, invoices, membershipPlan] = await Promise.all([
     supabase.from("service_requests").select("id", { count: "exact", head: true }).in("status", ["open", "matching", "quoted"]),
     supabase.from("quotes").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).eq("status", "submitted"),
     supabase.from("work_orders").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).in("status", ["scheduled", "en_route", "on_site", "blocked"]),
     supabase.from("invoices").select("id", { count: "exact", head: true }).eq("vendor_organization_id", membership.organizationId).in("status", ["issued", "partially_paid", "overdue"]),
+    supabase.from("vendor_memberships").select("status,current_period_ends_at,vendor_membership_levels(code,name)").eq("vendor_organization_id",membership.organizationId).in("status",["trialing","active","past_due","paused"]).order("starts_at",{ascending:false}).limit(1).maybeSingle(),
   ]);
   const metrics = [["Matched opportunities", opportunities.count ?? 0, ClipboardCheck], ["Open quotes", quotes.count ?? 0, FileText], ["Active work orders", workOrders.count ?? 0, Wrench], ["Outstanding invoices", invoices.count ?? 0, Receipt]] as const;
-  return <div><p className="text-sm font-semibold text-emerald-700">Local provider operations</p><h1 className="mt-1 text-3xl font-semibold tracking-[-.035em] text-slate-950 sm:text-4xl">Welcome to {membership.organizationName}.</h1><p className="mt-2 text-sm text-slate-500">Manage opportunities, quotes, field work, and payments from one Connect workspace.</p><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value.toLocaleString()}</p></div><span className="grid size-10 place-items-center rounded-xl bg-emerald-50"><Icon className="size-5 text-emerald-700" /></span></div></article>)}</section></div>;
+  const currentPlan = membershipPlan.data?.vendor_membership_levels as unknown as {code:string;name:string}|null;
+  return <div><div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-sm font-semibold text-emerald-700">Local provider operations</p><h1 className="mt-1 text-3xl font-semibold tracking-[-.035em] text-slate-950 sm:text-4xl">Welcome to {membership.organizationName}.</h1><p className="mt-2 text-sm text-slate-500">Manage opportunities, quotes, field work, and payments from one Connect workspace.</p></div><Link href="/vendor/membership" className="flex min-w-64 items-center justify-between rounded-2xl bg-slate-950 p-4 text-white hover:bg-emerald-800"><span className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-xl bg-white/10"><Sparkles className="size-4 text-emerald-400"/></span><span><span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Marketplace membership</span><span className="mt-1 block text-sm font-bold">{currentPlan?.name??"Free"}</span></span></span><ArrowRight className="size-4"/></Link></div><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value.toLocaleString()}</p></div><span className="grid size-10 place-items-center rounded-xl bg-emerald-50"><Icon className="size-5 text-emerald-700" /></span></div></article>)}</section></div>;
 }
