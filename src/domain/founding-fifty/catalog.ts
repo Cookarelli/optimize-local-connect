@@ -15,6 +15,8 @@ export const FOUNDING_BENEFIT_CATALOG = [
   ["Quarterly Founder Roundtables", "Invitation to quarterly conversations with the founder and cohort."],
   ["Founding Fifty Wall Placement", "Permanent recognition on the Founding Fifty wall."],
   ["Community Spotlight Eligibility", "Eligibility for community and business spotlight features."],
+  ["Premium Profile Visibility", "A richer profile presence across the local marketplace, subject to published placement rules."],
+  ["Optimize AI Eligibility", "Eligible providers may be considered by Optimize AI when verified, qualified, and relevant to a request."],
 ] as const;
 
 export const INITIAL_RESERVED_SEATS: Readonly<Record<number, string>> = {
