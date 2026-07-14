@@ -7,6 +7,7 @@ import {
   Menu,
   Settings,
   Store,
+  TrendingUp,
   Users,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/sign-in/actions";
@@ -24,6 +25,7 @@ const nav: { label: string; href: string; icon: typeof LayoutDashboard; permissi
   { label: "Properties", href: "/properties", icon: Building2, permission: "properties:view" },
   { label: "Requests", href: "/requests", icon: ClipboardList, permission: "service_requests:view" },
   { label: "Local Marketplace", href: "/marketplace", icon: Store, permission: "marketplace:view" },
+  { label: "Impact", href: "/impact", icon: TrendingUp, permission: "reports:view" },
   { label: "Team", href: "/team", icon: Users, permission: "members:view" },
 ];
 

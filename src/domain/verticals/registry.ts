@@ -12,6 +12,7 @@ export const SHARED_PLATFORM_MODULES = [
   "files",
   "notifications",
   "analytics",
+  "impact_engine",
   "optimize_ai",
 ] as const;
 

@@ -20,6 +20,7 @@ test("future community marketplaces reuse the shared platform core", () => {
       assert.deepEqual(vertical.navigation, []);
     }
   }
+  assert.ok(SHARED_PLATFORM_MODULES.includes("impact_engine"));
 });
 
 test("vertical keys and capability namespaces are unique", () => {

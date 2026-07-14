@@ -19,11 +19,13 @@ src/
     platform/                canonical brand and shared terminology
     verticals/               versioned industry registry and reusable module contracts
     optimize-ai/             provider-neutral decision and capability contracts
+    impact/                  governed metric definitions and calculation contracts
   features/                  shared and vertical-specific UI, queries, and commands
   lib/
     auth/                    session and authorization adapters
     supabase/                browser/server infrastructure clients
     optimize-ai/             capability-based model-provider routing
+    impact/                  organization reporting queries and range handling
 supabase/migrations/         forward-only schema, indexes, functions, and RLS
 docs/                        durable engineering and product contracts
 ```
@@ -32,7 +34,7 @@ New shared capabilities belong under `src/features/<capability>`. Vertical-speci
 
 ## Shared core and vertical modules
 
-The shared core owns identity, organizations, memberships, cities, markets, provider discovery, communication, files, notifications, analytics, audit history, outbox delivery, and Optimize AI™. Vertical modules contribute only domain entities, workflows, navigation, permission requirements, events, and optimization policies.
+The shared core owns identity, organizations, memberships, cities, markets, provider discovery, communication, files, notifications, analytics, the Optimize Local Impact Engine, audit history, outbox delivery, and Optimize AI™. Vertical modules contribute only domain entities, workflows, navigation, permission requirements, events, and optimization policies.
 
 `industry_verticals` is the industry catalog. `platform_modules` catalogs reusable core and extension modules. `vertical_modules` composes them into each industry, while `organization_verticals` activates one or more verticals for an organization. `src/domain/verticals/registry.ts` is the application contract used for version, capabilities, and navigation. Database and application definitions must change together.
 
@@ -75,6 +77,10 @@ Property discovery combines city coverage, category, and provider service offeri
 ## Optimize AI™
 
 Optimize AI’s mission is **Optimize every decision.** Its deterministic core ranks options against versioned, explainable policies. External model providers are optional adapters resolved by capability, modality, health, and priority; domain code never branches on provider names. `outbox_events` records durable post-commit work, `audit_events` provides traceability, and Optimize AI tables retain conversations, tool runs, inputs, candidate contributions, provider/model provenance, feedback, and approval state. High-impact actions require human approval. See `docs/optimize-ai.md`.
+
+## Optimize Local Impact Engine
+
+The Impact Engine stores immutable, source-attributed observations against versioned methodologies and maintains transactional daily rollups for dashboards. Automatic lifecycle capture supplies completed jobs, provider response, emergency response, and vendor growth; governed work-order inputs supply estimated savings, hours, and local spending retained. Reproducible snapshots isolate future AI reporting from live mutable operational state. See `docs/impact-engine.md`.
 
 ## Operational standards
 

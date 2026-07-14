@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the Property Management operating domains. Migration `202607140003_storage_policies.sql` creates private file policies. Migration `202607140004_production_auth.sql` adds active organization context and secure invitations. Migration `202607140005_platform_verticals.sql` adds industry activation. Migration `202607140006_optimize_ai.sql` introduces Optimize AI™ capability routing, decision policies, auditable optimization runs, multimodal inputs, and the authenticated recording function. Migration `202607140007_future_vertical_modules.sql` adds the reusable module catalog and future community-marketplace roadmap. Migration `202607140008_founding_fifty.sql` adds the permanent-seat program, atomic claims, benefits, payment ledger, Premium activation, badge awards, and governed admin procedures.
+The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes, work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` adds the Property Management operating domains. Migrations `003`–`008` add storage security, production authentication, vertical composition, Optimize AI™, future modules, and the Founding Fifty. Migration `202607140009_impact_engine.sql` adds governed impact methodologies, immutable observations, transactional rollups, summaries, snapshots, and provider-neutral AI report requests.
 
 ## Conventions
 
@@ -36,6 +36,12 @@ The Optimize Local Connect™ Supabase schema is defined by ordered, forward-onl
 | `founding_benefits` | Reusable program benefits. | Unique program/name; ordered public catalog. |
 | `founding_member_benefits` | Effective benefit assignments for a confirmed seat. | Unique seat/benefit pair with effective dates. |
 | `founding_payment_events` | Verified, idempotent payment webhook ledger. | Unique provider/event ID; Super Admin/service access only. |
+| `impact_methodologies` | Versioned impact formulas and assumptions. | Unique methodology/version; authenticated catalog read and Super Admin management. |
+| `impact_metric_definitions` | Cross-vertical measured, estimated, and derived metric catalog. | Stable key, unit, aggregation, display order, and methodology reference. |
+| `impact_observations` | Immutable impact source ledger with provenance, confidence, and business context. | Unique idempotency key; organization, market, work-order, and vendor indexes; tenant RLS. |
+| `daily_impact_metrics` | Transactionally maintained dashboard and reporting rollups. | Unique organization/date/market scope and date/market indexes. |
+| `impact_snapshots` | Reproducible point-in-time reporting inputs. | Organization and scope indexes; member/Super Admin RLS. |
+| `impact_report_requests` | Provider-neutral future AI reporting queue. | Optional provider connection; requester/status indexes. |
 | `organization_markets` | Markets in which an organization operates. | Composite primary key; indexed by market; admins manage. |
 | `organization_members` | User role and lifecycle status inside an organization. A user may hold different roles in different tenants. | Unique organization/user pair; owner/admin escalation is prevented by RLS. |
 | `organization_invitations` | Expiring, email-bound invitation to join an organization with a specific role; only a SHA-256 token hash is retained. | Unique live organization/email invitation; owners/admins inspect and revoke, security-definer functions create and accept. |
