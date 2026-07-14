@@ -2,6 +2,8 @@
 
 The executable source of truth is `src/domain/auth/roles.ts`. This document describes intent; code and RLS changes must ship together.
 
+`vendor` remains the technical role identifier for database and API compatibility. Optimize Local Connect™ presents that role as **Local Provider** in user-facing navigation and account context.
+
 | Capability | Super Admin | Owner | Admin | Property Manager | Vendor | Technician | Future Resident |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Manage platform and markets | Yes | — | — | — | — | — | — |
@@ -26,7 +28,7 @@ The executable source of truth is `src/domain/auth/roles.ts`. This document desc
 - **Owner:** highest authority inside one organization, including billing and ownership-sensitive operations.
 - **Admin:** operational organization administrator without billing ownership.
 - **Property Manager:** manages assigned organization properties, requests, vendors, and bid awards.
-- **Vendor:** vendor-company operator who manages the vendor profile, team, quotes, and work.
+- **Vendor (Local Provider):** provider-company operator who manages the provider profile, team, quotes, and work.
 - **Technician:** field worker limited to assigned work orders and necessary request context.
 - **Future Resident:** reserved resident-facing identity with no access to internal property operations.
 

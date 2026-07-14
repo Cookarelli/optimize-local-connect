@@ -1,4 +1,4 @@
-/** Cloudflare Worker entry point for Optimize Local Property OS. */
+/** Cloudflare Worker entry point for Optimize Local Connect. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 

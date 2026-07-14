@@ -30,7 +30,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
           <div className="mb-10 lg:hidden"><Logo /></div>
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,.08)] sm:p-9">
             <p className="text-sm font-semibold text-emerald-700">Welcome back</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Sign in to Property OS</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Sign in to Connect™</h2>
             <p className="mb-7 mt-2 text-sm leading-6 text-slate-500">Access is invite-only for verified property teams and service partners.</p>
             <SignInForm next={params.next} />
             {params.error ? <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">That sign-in link could not be completed. Please try again.</p> : null}

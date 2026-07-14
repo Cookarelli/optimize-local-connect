@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { QueryProvider } from "@/src/components/providers/query-provider";
+import { PLATFORM_BRAND } from "@/src/domain/platform/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,16 +16,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: { default: "Optimize Local Property OS", template: "%s | Property OS" },
-  description: "Save time, save money, and simplify property management with trusted local vendors in one connected operating system.",
-  applicationName: "Optimize Local Property OS",
+  title: { default: PLATFORM_BRAND.productName, template: `%s | ${PLATFORM_BRAND.shortName}` },
+  description: PLATFORM_BRAND.description,
+  applicationName: PLATFORM_BRAND.productName,
   openGraph: {
-    title: "Optimize Local Property OS",
-    description: "Save time. Save money. Simplify property management.",
+    title: PLATFORM_BRAND.productName,
+    description: PLATFORM_BRAND.mission,
     type: "website",
-    images: [{ url: "/og-v2.png", width: 1536, height: 1024, alt: "Optimize Local Property OS — Save time. Save money. Simplify property management." }],
+    images: [{ url: "/og-connect.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.productName} — ${PLATFORM_BRAND.mission}` }],
   },
-  twitter: { card: "summary_large_image", images: ["/og-v2.png"] },
+  twitter: { card: "summary_large_image", images: ["/og-connect.png"] },
 };
 
 export default function RootLayout({

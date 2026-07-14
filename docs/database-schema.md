@@ -1,6 +1,6 @@
 # PostgreSQL database schema
 
-The Supabase PostgreSQL schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the complete operating domains. Migration `202607140003_storage_policies.sql` creates the private file bucket and organization/uploader path policies. Migration `202607140004_production_auth.sql` adds active organization context and secure organization invitations.
+The Optimize Local Connect™ Supabase schema is defined by ordered, forward-only migrations in `supabase/migrations`. Migration `202607140001_initial_property_os.sql` establishes identity, tenancy, marketplace requests, quotes (originally named bids), work orders, audit events, and the transactional outbox. Migration `202607140002_complete_platform_schema.sql` normalizes cities, markets, categories, and quotes and adds the Property Management operating domains. Migration `202607140003_storage_policies.sql` creates the private file bucket and organization/uploader path policies. Migration `202607140004_production_auth.sql` adds active organization context and secure organization invitations. Migration `202607140005_platform_verticals.sql` adds the shared industry catalog and activates Property Management for existing organizations without renaming backend contracts.
 
 ## Conventions
 
@@ -25,13 +25,17 @@ The Supabase PostgreSQL schema is defined by ordered, forward-only migrations in
 | `markets` | Named marketplace operating regions. A market is not limited to one city. | Globally unique slug; authenticated read; super-admin write. |
 | `market_cities` | Many-to-many city membership in a market. | Composite primary key; one partial unique primary-city index per market. |
 | `organizations` | Tenant root for property-management and vendor companies. | Unique slug; members read; owners/admins update; only platform administration creates. |
+| `industry_verticals` | Shared catalog of installable industry modules and their lifecycle state. | Immutable unique key; authenticated users read launch/active rows; super admins manage. |
+| `organization_verticals` | Activates one or more industry verticals for an organization and identifies its primary experience. | Composite organization/vertical key; one active primary vertical per organization; organization members read. |
 | `organization_markets` | Markets in which an organization operates. | Composite primary key; indexed by market; admins manage. |
 | `organization_members` | User role and lifecycle status inside an organization. A user may hold different roles in different tenants. | Unique organization/user pair; owner/admin escalation is prevented by RLS. |
 | `organization_invitations` | Expiring, email-bound invitation to join an organization with a specific role; only a SHA-256 token hash is retained. | Unique live organization/email invitation; owners/admins inspect and revoke, security-definer functions create and accept. |
 | `property_manager_profiles` | Manager-specific licensing and employment fields attached to a membership. | One-to-one with organization membership. |
 | `property_manager_assignments` | Effective-dated manager-to-property assignment. | Composite primary key; one active primary manager per property. |
 
-## Properties and vendor marketplace
+## Property Management vertical and provider marketplace
+
+The following launch-vertical tables retain their original technical names for migration, API, and RLS compatibility. Product UI refers to vendor organizations as Local Providers.
 
 | Table | Purpose and relationships | Access/index notes |
 |---|---|---|

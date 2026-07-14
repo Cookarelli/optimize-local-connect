@@ -1,6 +1,6 @@
 # Authentication and organization access
 
-Optimize Local Property OS uses Supabase Auth for identity, PostgreSQL memberships for authorization, and `@supabase/ssr` cookies for persistent browser sessions. UI checks improve usability; database row-level security remains the final authorization boundary.
+Optimize Local Connect™ uses Supabase Auth for shared platform identity, PostgreSQL memberships for authorization, and `@supabase/ssr` cookies for persistent browser sessions. UI checks improve usability; database row-level security remains the final authorization boundary across every industry vertical.
 
 ## Supported sign-in methods
 
@@ -35,7 +35,7 @@ Use a production SMTP provider and customize the invite, magic-link, and passwor
 | Super Admin | `/admin` |
 | Property organization Owner or Admin | `/admin` |
 | Property Manager | `/manager` |
-| Vendor organization Owner, Admin, Vendor, or Technician | `/vendor` |
+| Local Provider organization Owner, Admin, Vendor, or Technician | `/vendor` |
 | Future Resident | `/resident` |
 | User without a membership | `/onboarding` |
 

@@ -16,11 +16,13 @@ import type { AppUser } from "@/src/domain/auth/types";
 import { can } from "@/src/lib/auth/authorization";
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { Logo } from "@/src/components/brand/logo";
+import { getRoleLabel } from "@/src/domain/platform/terminology";
+import { PROPERTY_MANAGEMENT_VERTICAL } from "@/src/domain/verticals/registry";
 
 const nav: { label: string; href: string; icon: typeof LayoutDashboard; permission?: Permission }[] = [
   { label: "Properties", href: "/properties", icon: Building2, permission: "properties:view" },
   { label: "Requests", href: "/requests", icon: ClipboardList, permission: "service_requests:view" },
-  { label: "Marketplace", href: "/marketplace", icon: Store, permission: "marketplace:view" },
+  { label: "Local Marketplace", href: "/marketplace", icon: Store, permission: "marketplace:view" },
   { label: "Team", href: "/team", icon: Users, permission: "members:view" },
 ];
 
@@ -38,7 +40,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-4 py-5 lg:flex">
         <div className="px-2"><Logo compact /></div>
         <div className="mt-8 rounded-2xl bg-slate-950 p-3.5 text-white">
-          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Workspace</p>
+          <p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-400">{PROPERTY_MANAGEMENT_VERTICAL.name}</p>
           <p className="mt-1 truncate text-sm font-semibold">{activeMembership?.organizationName ?? "Platform operations"}</p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400"><MapPin className="size-3.5" /> All assigned markets</p>
         </div>
@@ -54,7 +56,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           <Link href="/settings" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-600 hover:bg-slate-50"><Settings className="size-4.5" /> Settings</Link>
           <div className="mt-3 flex items-center gap-3 px-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">{displayName.slice(0, 1).toUpperCase()}</span>
-            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{displayName}</p><p className="truncate text-xs text-slate-500">{activeMembership?.role.replaceAll("_", " ") ?? "Super admin"}</p></div>
+            <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{displayName}</p><p className="truncate text-xs text-slate-500">{activeMembership ? getRoleLabel(activeMembership.role) : "Super Admin"}</p></div>
             <form action={signOut}><button type="submit" className="rounded-lg p-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Sign out">Out</button></form>
           </div>
         </div>

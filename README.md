@@ -1,19 +1,30 @@
-# Optimize Local Property OS
+# Optimize Local Connect™
 
-The operating system connecting property management teams with verified local service vendors.
+An AI-ready community platform from **Optimize Local™** that connects local organizations with trusted providers, shared workflows, and better decisions.
+
+**Company tagline:** Optimize Local. Maximize Savings.
+
+**Mission:** Save Time. Save Money. Strengthen Communities.
+
+> “We're not building software. We're building stronger local economies—one optimized decision at a time.”
+
+## Platform evolution
+
+Optimize Local Connect is not a rebuild of the original property platform. It preserves the production authentication, permissions, marketplace, work-order, review, role, and Supabase foundations while making industry context explicit and modular.
+
+Property Management is the first launch vertical. Future industries plug into the same identity, organization, market, provider, communication, analytics, audit, event, and AI foundations through a versioned vertical registry. Existing property- and vendor-named database tables remain stable to protect migrations, APIs, policies, and deployed data.
 
 ## What is implemented
 
-- Multi-tenant PostgreSQL schema covering cities, markets, organizations, properties, vendors, requests, quotes, work orders, billing, communications, warranties, appliances, analytics, and AI interactions
-- Supabase Auth with password and magic-link sign-in
-- Google OAuth, password recovery, expiring organization invitations, and provider-ready Microsoft/Apple login
-- Server-side session loading and authorization
-- Role-routed Admin, Property Manager, Vendor, Technician, and future Resident entry points
-- PostgreSQL row-level security for tenant isolation and role enforcement
-- Seven application roles with an explicit permission registry
-- Mobile-first public experience and authenticated operations shell
-- React Query provider for interactive feature modules
-- Transactional outbox and immutable audit-event foundations for automation and AI workflows
+- Multi-tenant PostgreSQL schema for shared platform foundations and the Property Management launch vertical
+- Unlimited cities and markets with organization-scoped access
+- Additive industry-vertical registry and organization activation model
+- Local provider marketplace, service requests, quotes, work orders, invoices, reviews, warranties, and appliance inventory
+- Supabase Auth with password, magic-link, Google OAuth, recovery, and expiring organization invitations
+- Provider-ready Microsoft and Apple sign-in configuration
+- Seven application roles with explicit permissions and PostgreSQL row-level security
+- Mobile-first public experience and authenticated, role-routed workspaces
+- Transactional outbox, immutable audit events, structured analytics, and governed AI interaction foundations
 
 ## Stack
 
@@ -23,17 +34,17 @@ The operating system connecting property management teams with verified local se
 - Zod input and environment validation
 - Vinext/Cloudflare build target for the Sites deployment surface
 
-Prisma is intentionally not included. Supabase/PostgREST plus PostgreSQL RLS is the primary data-access and authorization boundary. Adding a second ORM abstraction at this stage would duplicate the schema model and make policy behavior less obvious.
+Prisma is intentionally not included. Supabase/PostgREST plus PostgreSQL RLS is the primary data-access and authorization boundary. A second ORM abstraction would duplicate the schema model and obscure policy behavior.
 
 ## Local setup
 
 1. Create a Supabase project.
 2. Copy `.env.example` to `.env.local` and add the project URL and anon key.
-3. Apply every file in `supabase/migrations` in filename order with the Supabase CLI (`supabase db push`) or SQL editor.
+3. Apply every file in `supabase/migrations` in filename order with `supabase db push` or the SQL editor.
 4. Configure the Supabase Auth site URL as `http://localhost:3000` and allow `http://localhost:3000/auth/callback` as a redirect URL.
 5. Run `npm run dev`.
 
-The product is invite-only by default. Create the first authenticated user, then set `profiles.is_super_admin = true` for that user from the Supabase dashboard. Platform administrators can then create organizations and memberships through trusted server-side administration workflows.
+The product is invite-only by default. Create the first authenticated user, then set `profiles.is_super_admin = true` from the Supabase dashboard. Platform administrators can then create organizations and memberships through trusted server-side workflows.
 
 ## Commands
 
@@ -47,6 +58,6 @@ npm run build
 
 ## Security model
 
-Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the acting user first, and write an `audit_events` row in the same business transaction.
+Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the actor, and write an `audit_events` row in the same business transaction.
 
-See `docs/architecture.md`, `docs/permissions.md`, `docs/database-schema.md`, and `docs/authentication.md` before adding a feature.
+Read [architecture](docs/architecture.md), [vertical modules](docs/platform-verticals.md), [permissions](docs/permissions.md), [database schema](docs/database-schema.md), and [authentication](docs/authentication.md) before adding a capability.

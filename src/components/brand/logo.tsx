@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PLATFORM_BRAND } from "@/src/domain/platform/brand";
 import { cn } from "@/src/lib/utils";
 
 export function Logo({ compact = false, inverse = false }: { compact?: boolean; inverse?: boolean }) {
@@ -6,7 +7,7 @@ export function Logo({ compact = false, inverse = false }: { compact?: boolean; 
     <Link
       href="/"
       className="inline-flex items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-      aria-label="Optimize Local Property OS home"
+      aria-label={`${PLATFORM_BRAND.productName} home`}
     >
       <span
         aria-hidden="true"
@@ -21,7 +22,7 @@ export function Logo({ compact = false, inverse = false }: { compact?: boolean; 
           compact && "sr-only sm:not-sr-only",
         )}
       >
-        Optimize Local <span className={inverse ? "text-emerald-400" : "text-emerald-700"}>Property OS</span>
+        Optimize Local <span className={inverse ? "text-emerald-400" : "text-emerald-700"}>Connect™</span>
       </span>
     </Link>
   );
