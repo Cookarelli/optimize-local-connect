@@ -24,6 +24,76 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 3px;
+}
+
+.hero-orb {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.hero-orb-one {
+  right: -12rem;
+  top: 3rem;
+  width: 42rem;
+  height: 42rem;
+  background: radial-gradient(circle at 35% 35%, rgba(167, 243, 208, .9), rgba(209, 250, 229, .35) 58%, transparent 72%);
+  animation: drift 12s ease-in-out infinite alternate;
+}
+
+.hero-orb-two {
+  left: -18rem;
+  bottom: -15rem;
+  width: 38rem;
+  height: 38rem;
+  background: radial-gradient(circle, rgba(224, 231, 255, .7), transparent 67%);
+}
+
+.hero-dashboard::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,.9), rgba(16,185,129,.18), rgba(255,255,255,.7));
+}
+
+.animate-rise { animation: rise .8s cubic-bezier(.22,1,.36,1) both; }
+.animate-rise-delayed { animation: rise .9s .14s cubic-bezier(.22,1,.36,1) both; }
+.float-card { animation: float 5s ease-in-out infinite; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-8px) rotate(-1deg); }
+}
+
+@keyframes drift {
+  from { transform: translate3d(0,0,0) scale(1); }
+  to { transform: translate3d(-3rem,2rem,0) scale(1.08); }
+}
+
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation: reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 28%;
+  }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
 ::selection {
   background: #a7f3d0;
   color: #052e16;
@@ -35,7 +105,7 @@ body {
   }
 
   .section-title {
-    @apply mt-4 text-4xl font-semibold leading-[1.02] tracking-[-.045em] text-slate-950 sm:text-6xl;
+    @apply mt-4 text-4xl font-semibold leading-[.98] tracking-[-.05em] text-slate-950 sm:text-6xl;
   }
 
   .section-copy {

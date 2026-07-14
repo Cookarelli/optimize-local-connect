@@ -16,15 +16,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: { default: "Optimize Local Property OS", template: "%s | Property OS" },
-  description: "The local property management operating system connecting property teams with verified local vendors.",
+  description: "Save time, save money, and simplify property management with trusted local vendors in one connected operating system.",
   applicationName: "Optimize Local Property OS",
   openGraph: {
     title: "Optimize Local Property OS",
-    description: "Every property. Every vendor. One calm workspace.",
+    description: "Save time. Save money. Simplify property management.",
     type: "website",
-    images: [{ url: "/og.png", width: 1731, height: 909, alt: "Optimize Local Property OS — Less chasing. More resolved." }],
+    images: [{ url: "/og-v2.png", width: 1536, height: 1024, alt: "Optimize Local Property OS — Save time. Save money. Simplify property management." }],
   },
-  twitter: { card: "summary_large_image", images: ["/og.png"] },
+  twitter: { card: "summary_large_image", images: ["/og-v2.png"] },
 };
 
 export default function RootLayout({
