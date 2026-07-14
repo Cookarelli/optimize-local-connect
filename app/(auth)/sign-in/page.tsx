@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { SignInForm } from "@/src/components/auth/sign-in-form";
 import { Logo } from "@/src/components/brand/logo";
+import { MissionSignature } from "@/src/components/brand/mission-signature";
 
 export const metadata: Metadata = { title: "Sign in" };
 
@@ -14,16 +15,16 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <Logo inverse />
         <div className="max-w-lg">
           <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-emerald-400">One operational source of truth</p>
-          <h1 className="text-5xl font-semibold leading-[1.04] tracking-[-0.04em]">Every property. Every vendor. One calm workspace.</h1>
+          <h1 className="text-5xl font-semibold leading-[1.04] tracking-[-0.04em]">Every property. Every local provider. One calm workspace.</h1>
           <ul className="mt-8 space-y-4 text-slate-300">
-            {["Verified local vendor network", "Permissioned team workflows", "Multi-market visibility without the chaos"].map((item) => (
+            {["Verified local provider network", "Permissioned team workflows", "Multi-market visibility without the chaos"].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <CheckCircle2 aria-hidden="true" className="size-5 text-emerald-400" /> {item}
               </li>
             ))}
           </ul>
         </div>
-        <p className="text-sm text-slate-500">Built for the people keeping local properties running.</p>
+        <MissionSignature inverse />
       </section>
       <section className="flex items-center justify-center p-5 sm:p-10">
         <div className="w-full max-w-md">
@@ -35,7 +36,8 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
             <SignInForm next={params.next} />
             {params.error ? <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">That sign-in link could not be completed. Please try again.</p> : null}
           </div>
-          <p className="mt-6 text-center text-sm text-slate-500">Need access? <Link href="/#early-access" className="font-semibold text-slate-900 underline-offset-4 hover:underline">Request early access</Link></p>
+          <p className="mt-6 text-center text-sm text-slate-500">Need access? <Link href="/#contact" className="font-semibold text-slate-900 underline-offset-4 hover:underline">Request early access</Link></p>
+          <MissionSignature className="mt-5 text-center lg:hidden" />
         </div>
       </section>
     </main>

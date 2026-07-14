@@ -16,6 +16,7 @@ import type { AppUser } from "@/src/domain/auth/types";
 import { can } from "@/src/lib/auth/authorization";
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { Logo } from "@/src/components/brand/logo";
+import { MissionSignature } from "@/src/components/brand/mission-signature";
 import { getRoleLabel } from "@/src/domain/platform/terminology";
 import { PROPERTY_MANAGEMENT_VERTICAL } from "@/src/domain/verticals/registry";
 
@@ -44,6 +45,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           <p className="mt-1 truncate text-sm font-semibold">{activeMembership?.organizationName ?? "Platform operations"}</p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400"><MapPin className="size-3.5" /> All assigned markets</p>
         </div>
+        <MissionSignature className="mt-4 px-2 leading-5" />
         {user.memberships.length > 1 ? <form action={switchOrganization} className="mt-3 flex gap-2"><label htmlFor="organization-switcher" className="sr-only">Active organization</label><select id="organization-switcher" name="organizationId" defaultValue={activeMembership?.organizationId} className="min-h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-800">{user.memberships.map((membership) => <option key={membership.id} value={membership.organizationId}>{membership.organizationName}</option>)}</select><button type="submit" className="rounded-lg bg-emerald-700 px-2.5 text-xs font-bold text-white">Go</button></form> : null}
         <nav aria-label="Application navigation" className="mt-5 space-y-1">
           {visibleNav.map(({ label, href, icon: Icon }, index) => (
@@ -68,6 +70,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           <nav aria-label="Mobile application navigation" className="absolute right-0 top-13 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
             {visibleNav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Icon className="size-4.5" />{label}</Link>)}
             <Link href="/settings" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Settings className="size-4.5" />Settings</Link>
+            <div className="px-3 py-3"><MissionSignature /></div>
             <form action={signOut}><button type="submit" className="min-h-11 w-full rounded-xl px-3 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50">Sign out</button></form>
           </nav>
         </details>

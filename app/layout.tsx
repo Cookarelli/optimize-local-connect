@@ -23,9 +23,9 @@ export const metadata: Metadata = {
     title: PLATFORM_BRAND.productName,
     description: PLATFORM_BRAND.mission,
     type: "website",
-    images: [{ url: "/og-connect.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.productName} — ${PLATFORM_BRAND.mission}` }],
+    images: [{ url: "/og-company.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.parentName} — Technology should make communities stronger.` }],
   },
-  twitter: { card: "summary_large_image", images: ["/og-connect.png"] },
+  twitter: { card: "summary_large_image", images: ["/og-company.png"] },
 };
 
 export default function RootLayout({
