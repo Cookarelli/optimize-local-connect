@@ -2,7 +2,7 @@
 
 ## Product boundaries
 
-Property OS is a multi-tenant marketplace, not a directory. Property-management organizations own properties and service requests. Vendor organizations own verification profiles, trades, bids, and technician teams. Markets connect both sides by geography without weakening organization-level data isolation.
+Property OS is a multi-tenant marketplace, not a directory. Property-management organizations own properties and service requests. Vendor organizations own verification profiles, service categories, quotes, and technician teams. Markets connect both sides by geography without weakening organization-level data isolation.
 
 ## Module layout
 
@@ -27,8 +27,8 @@ New business capabilities belong under `src/features/<feature>`. Route files sho
 
 1. A property-team member creates a service request for a property and trade.
 2. Publishing exposes the request only to vendor organizations serving the same market and trade.
-3. A vendor submits one bid per request.
-4. An authorized property-team member awards a bid and creates a work order.
+3. A vendor submits one quote per request.
+4. An authorized property-team member awards a quote and creates a work order.
 5. Vendor administrators assign a technician; the technician updates only assigned work.
 6. Completion updates operational records and emits an outbox event for downstream workflows.
 
@@ -53,7 +53,7 @@ Supabase is the system of record. The anon key is safe to expose only because RL
 
 ## Multi-city expansion
 
-`markets` is a first-class entity, not a free-text field. Organizations may operate in many markets through `organization_markets`; properties belong to exactly one market. Vendor discovery requires both an organization-market relationship and a vendor-trade relationship. This keeps expansion deterministic and indexable.
+`cities` is the canonical unlimited place registry. `markets` are named operating regions that may contain any number of cities through `market_cities`. Organizations may operate in many markets through `organization_markets`; each property belongs to a valid organization/market and market/city pair. Vendor discovery combines city coverage, service category, and service offering. This keeps expansion deterministic and indexable without assuming one market equals one city.
 
 ## AI readiness
 

@@ -21,7 +21,7 @@ const benefits = [
 const steps = [
   ["01", "Request", "A manager captures the issue once, with the property, priority, access details, and scope."],
   ["02", "Match", "Property OS surfaces qualified vendors available in the local market and relevant trade."],
-  ["03", "Resolve", "Teams compare bids, award work, track progress, and retain a complete operational record."],
+  ["03", "Resolve", "Teams compare quotes, award work, track progress, and retain a complete operational record."],
 ];
 
 export default function Home() {
@@ -68,7 +68,7 @@ export default function Home() {
               <div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-amber-50"><Wrench className="size-5 text-amber-700" /></span><div><p className="text-sm font-semibold">No cooling · Unit 204</p><p className="text-xs text-slate-500">Riverview Flats · HVAC</p></div></div><span className="rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700">Urgent</span></div>
               <div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="flex items-center gap-2 text-xs text-slate-500"><BadgeCheck className="size-4 text-emerald-600" /> 3 verified matches</span><span className="text-xs font-semibold text-slate-800">Review vendors →</span></div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-slate-100 p-4"><p className="text-xs text-slate-500">Response time</p><p className="mt-1 text-lg font-bold">18 min</p></div><div className="rounded-2xl border border-slate-100 p-4"><p className="text-xs text-slate-500">Open bids</p><p className="mt-1 text-lg font-bold">6</p></div></div>
+            <div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-2xl border border-slate-100 p-4"><p className="text-xs text-slate-500">Response time</p><p className="mt-1 text-lg font-bold">18 min</p></div><div className="rounded-2xl border border-slate-100 p-4"><p className="text-xs text-slate-500">Open quotes</p><p className="mt-1 text-lg font-bold">6</p></div></div>
           </div>
         </div>
       </section>

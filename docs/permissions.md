@@ -12,8 +12,8 @@ The executable source of truth is `src/domain/auth/roles.ts`. This document desc
 | Delete properties | Yes | Yes | Yes | — | — | — | — |
 | Create/manage service requests | Yes | Yes | Yes | Yes | — | — | Resident request only |
 | Discover and invite vendors | Yes | Yes | Yes | Yes | — | — | — |
-| Submit bids | Yes | — | — | — | Yes | — | — |
-| Award bids | Yes | Yes | Yes | Yes | — | — | — |
+| Submit quotes | Yes | — | — | — | Yes | — | — |
+| Award quotes | Yes | Yes | Yes | Yes | — | — | — |
 | Manage vendor profile | Yes | — | — | — | Yes | — | — |
 | View assigned work orders | Yes | Yes | Yes | Yes | Yes | Yes | — |
 | Update work orders | Yes | — | — | — | Yes | Assigned only | — |
@@ -26,7 +26,7 @@ The executable source of truth is `src/domain/auth/roles.ts`. This document desc
 - **Owner:** highest authority inside one organization, including billing and ownership-sensitive operations.
 - **Admin:** operational organization administrator without billing ownership.
 - **Property Manager:** manages assigned organization properties, requests, vendors, and bid awards.
-- **Vendor:** vendor-company operator who manages the vendor profile, team, bids, and work.
+- **Vendor:** vendor-company operator who manages the vendor profile, team, quotes, and work.
 - **Technician:** field worker limited to assigned work orders and necessary request context.
 - **Future Resident:** reserved resident-facing identity with no access to internal property operations.
 

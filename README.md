@@ -4,7 +4,7 @@ The operating system connecting property management teams with verified local se
 
 ## What is implemented
 
-- Multi-tenant PostgreSQL schema with market, organization, membership, property, vendor, request, bid, and work-order boundaries
+- Multi-tenant PostgreSQL schema covering cities, markets, organizations, properties, vendors, requests, quotes, work orders, billing, communications, warranties, appliances, analytics, and AI interactions
 - Supabase Auth with password and magic-link sign-in
 - Server-side session loading and authorization
 - PostgreSQL row-level security for tenant isolation and role enforcement
@@ -27,7 +27,7 @@ Prisma is intentionally not included. Supabase/PostgREST plus PostgreSQL RLS is 
 
 1. Create a Supabase project.
 2. Copy `.env.example` to `.env.local` and add the project URL and anon key.
-3. Apply `supabase/migrations/202607140001_initial_property_os.sql` with the Supabase CLI or SQL editor.
+3. Apply every file in `supabase/migrations` in filename order with the Supabase CLI (`supabase db push`) or SQL editor.
 4. Configure the Supabase Auth site URL as `http://localhost:3000` and allow `http://localhost:3000/auth/callback` as a redirect URL.
 5. Run `npm run dev`.
 
@@ -47,4 +47,4 @@ npm run build
 
 Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the acting user first, and write an `audit_events` row in the same business transaction.
 
-See `docs/architecture.md` and `docs/permissions.md` before adding a feature.
+See `docs/architecture.md`, `docs/permissions.md`, and `docs/database-schema.md` before adding a feature.

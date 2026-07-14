@@ -16,7 +16,7 @@ test("privileged operations remain narrowly scoped", () => {
   assert.equal(hasPermission("owner", "billing:manage"), true);
   assert.equal(hasPermission("admin", "billing:manage"), false);
   assert.equal(hasPermission("property_manager", "properties:delete"), false);
-  assert.equal(hasPermission("vendor", "bids:create"), true);
-  assert.equal(hasPermission("technician", "bids:create"), false);
+  assert.equal(hasPermission("vendor", "quotes:create"), true);
+  assert.equal(hasPermission("technician", "quotes:create"), false);
   assert.equal(hasPermission("future_resident", "properties:view"), false);
 });
