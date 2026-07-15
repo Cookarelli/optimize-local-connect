@@ -17,11 +17,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
   title: { default: PLATFORM_BRAND.productName, template: `%s | ${PLATFORM_BRAND.shortName}` },
-  description: PLATFORM_BRAND.description,
+  description: "Optimize Local Connect is the flagship AI-powered community platform for trusted local decisions, launching first with property management.",
+  keywords: ["Optimize Local Connect", "local business marketplace", "property management platform", "trusted local vendors", "community impact"],
   applicationName: PLATFORM_BRAND.productName,
   openGraph: {
     title: PLATFORM_BRAND.productName,
-    description: PLATFORM_BRAND.mission,
+    description: "Save time. Save money. Strengthen communities with trusted local businesses and simpler property operations.",
     type: "website",
     images: [{ url: "/og-company.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.parentName} — Technology should make communities stronger.` }],
   },
