@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAppOrigin } from "@/src/lib/auth/origin";
 import { requireUser } from "@/src/lib/auth/session";
-import { PayPalPaymentLinkAdapter } from "@/src/domain/founding-fifty/payment";
+import { createStripeCheckout } from "@/src/lib/founding-fifty/stripe";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 export type ClaimState = { status: "idle" | "error"; message?: string };
@@ -38,7 +38,7 @@ export async function createFoundingClaim(_state: ClaimState, formData: FormData
     claim_city: parsed.data.city,
     claim_description: parsed.data.description,
     claim_terms_version: "founding-fifty-2026-07-14",
-    claim_payment_provider: "paypal",
+    claim_payment_provider: "stripe",
   });
   if (error || !claimId) return { status: "error", message: error?.message.includes("not available") ? "That seat was just claimed or reserved. Choose another available seat." : "We could not hold this seat. Please try again." };
 
@@ -49,16 +49,31 @@ export async function createFoundingClaim(_state: ClaimState, formData: FormData
     const { error: uploadError } = await supabase.storage.from("founding-fifty-logos").upload(path, logo, { contentType: logo.type, upsert: true });
     if (!uploadError) {
       const { data } = supabase.storage.from("founding-fifty-logos").getPublicUrl(path);
-      await supabase.from("founding_claims").update({ logo_url: data.publicUrl }).eq("id", claimId).eq("user_id", user.id);
+      await supabase.rpc("set_founding_claim_logo", { target_claim_id: claimId, target_logo_url: data.publicUrl });
     }
   }
 
-  const paymentUrl = process.env.NEXT_PUBLIC_PAYPAL_PAYMENT_URL;
-  if (paymentUrl) {
+  try {
     const origin = await getAppOrigin();
-    const checkout = await new PayPalPaymentLinkAdapter(paymentUrl).createCheckout({ claimId, amountCents: 29900, currency: "USD", returnUrl: `${origin}/founding-fifty/confirmation/${claimId}`, cancelUrl: `${origin}/founding-fifty/confirmation/${claimId}?payment=cancelled` });
-    await supabase.from("founding_claims").update({ status: checkout.claimStatus, metadata: { checkout_mode: checkout.mode } }).eq("id", claimId).eq("user_id", user.id);
-    redirect(checkout.redirectUrl);
+    const { data: claim, error: claimError } = await supabase.from("founding_claims").select("payment_amount_cents,email").eq("id", claimId).eq("user_id", user.id).single();
+    if (claimError || !claim) return { status: "error", message: "Your seat is held, but checkout could not be prepared. Please try again." };
+    const checkout = await createStripeCheckout({
+      claimId,
+      amountCents: claim.payment_amount_cents,
+      currency: "USD",
+      email: claim.email,
+      successUrl: `${origin}/founding-fifty/confirmation/${claimId}?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${origin}/founding-fifty/confirmation/${claimId}?checkout=cancelled`,
+    });
+    const { error: checkoutError } = await supabase.rpc("set_founding_claim_checkout", {
+      target_claim_id: claimId,
+      target_checkout_reference: checkout.id,
+      target_expires_at: checkout.expiresAt,
+    });
+    if (checkoutError) return { status: "error", message: "Your seat is held, but checkout could not be attached. Please try again." };
+    redirect(checkout.url);
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    return { status: "error", message: "Secure checkout is temporarily unavailable. Your seat remains held; please try again shortly." };
   }
-  redirect(`/founding-fifty/confirmation/${claimId}`);
 }

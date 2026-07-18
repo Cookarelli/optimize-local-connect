@@ -56,6 +56,57 @@ npm run test
 npm run build
 ```
 
+## Founding Partner Stripe checkout development
+
+The `/founders` checkout uses Stripe Checkout in one-time payment mode. The server fixes the order at **$299.00 USD**, creates a Stripe Customer, collects email and business name, and redirects back to `/founders/success`. Only the signed Stripe webhook writes the authoritative payment and pending onboarding records.
+
+Add these server-side values to `.env.local`:
+
+```bash
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_FOUNDING_PRODUCT_ID=prod_...
+```
+
+- `STRIPE_SECRET_KEY` is the Stripe test-mode secret key. Never prefix it with `NEXT_PUBLIC_` or expose it in browser code.
+- `STRIPE_WEBHOOK_SECRET` is printed by the local Stripe listener. It is different from the Dashboard endpoint secret.
+- `STRIPE_FOUNDING_PRODUCT_ID` is the Stripe Product ID for **Optimize Local Connect Founding Partner**. The application creates the one-time 29,900-cent USD price data server-side against that product.
+- `NEXT_PUBLIC_APP_URL` must be `http://localhost:3000` locally and the canonical HTTPS origin in production.
+- The existing Supabase URL, anon key, and server-only service-role key are also required because checkout capacity, payments, and onboarding are persisted in Supabase.
+
+Apply all Supabase migrations, start the app, then forward Stripe test events:
+
+```bash
+npx supabase db push
+npm run dev
+stripe login
+stripe listen --events checkout.session.completed,checkout.session.expired --forward-to localhost:3000/api/payments/stripe/webhook
+```
+
+Copy the listener's `whsec_...` value into `.env.local`, restart the app, visit `/founders`, and click **Become a Founding Partner**. In Stripe test mode use card number `4242 4242 4242 4242`, any future expiration date, any three-digit CVC, and any valid postal code. Do not use real card details in test mode.
+
+After payment, confirm the database transaction in the Supabase SQL editor:
+
+```sql
+select
+  p.checkout_session_id,
+  p.payment_intent_id,
+  p.amount_paid_cents,
+  p.currency,
+  p.payment_status,
+  p.customer_email,
+  p.customer_name,
+  p.membership_type,
+  p.paid_at,
+  o.status as onboarding_status
+from public.founding_partner_payments p
+join public.founding_partner_onboardings o on o.payment_id = p.id
+order by p.paid_at desc
+limit 10;
+```
+
+A successful test shows `29900`, `USD`, `paid`, `founding_partner`, and one `pending` onboarding row. Re-delivering the same webhook must not create another payment or onboarding row.
+
 ## Security model
 
 Application permission checks shape the UI and protect server operations. PostgreSQL RLS independently controls every tenant-owned table. Never use the service-role key in browser code. Administrative invitations and platform mutations must run in a trusted server context, validate the actor, and write an `audit_events` row in the same business transaction.

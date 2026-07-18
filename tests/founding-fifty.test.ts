@@ -4,6 +4,9 @@ import test from "node:test";
 import { classifyPayPalEvent, extractClaimId, PayPalPaymentLinkAdapter } from "../src/domain/founding-fifty/payment";
 
 const migration = readFileSync(new URL("../supabase/migrations/202607140008_founding_fifty.sql", import.meta.url), "utf8");
+const checkoutMigration = readFileSync(new URL("../supabase/migrations/202607140014_founder_checkout_hardening.sql", import.meta.url), "utf8");
+const stripeWebhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
+const stripeAdapter = readFileSync(new URL("../src/lib/founding-fifty/stripe.ts", import.meta.url), "utf8");
 
 test("PayPal outcomes distinguish verified, failed, cancelled, and irrelevant events", () => {
   assert.equal(classifyPayPalEvent("PAYMENT.CAPTURE.COMPLETED"), "verified");
@@ -59,4 +62,26 @@ test("unauthorized seat mutation is excluded by RLS and admin procedures", () =>
 
 test("duplicate webhook events are rejected at the database boundary", () => {
   assert.match(migration, /unique \(provider, provider_event_id\)/);
+});
+
+test("Stripe Checkout binds a server-priced session to the claim and product", () => {
+  assert.match(stripeAdapter, /client_reference_id: input\.claimId/);
+  assert.match(stripeAdapter, /metadata\[claim_id\]/);
+  assert.match(stripeAdapter, /price_data\]\[unit_amount\]/);
+  assert.match(stripeAdapter, /STRIPE_FOUNDING_PRODUCT_ID/);
+});
+
+test("Stripe fulfillment requires a signed, retrieved, fully-paid $299 session", () => {
+  assert.match(stripeWebhook, /verifyStripeWebhook/);
+  assert.match(stripeWebhook, /retrieveAndVerifyStripeCheckout/);
+  assert.match(stripeAdapter, /payment_status !== "paid"/);
+  assert.match(stripeAdapter, /amount_total !== 29900/);
+  assert.match(stripeAdapter, /session\.currency\?\.toLowerCase\(\) !== "usd"/);
+});
+
+test("claim owners no longer receive broad direct update permission", () => {
+  assert.match(checkoutMigration, /drop policy if exists "founding_claims_update_own_logo"/);
+  assert.match(checkoutMigration, /revoke update on public\.founding_claims from authenticated/);
+  assert.match(checkoutMigration, /set_founding_claim_logo/);
+  assert.match(checkoutMigration, /set_founding_claim_checkout/);
 });

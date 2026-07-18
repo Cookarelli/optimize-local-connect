@@ -73,3 +73,30 @@ export async function resendFoundingConfirmation(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/founding-fifty");
 }
+
+const onboardingReviewSchema = z.object({
+  onboardingId: z.string().uuid(),
+  status: z.enum(["under_review", "approved", "changes_requested", "rejected", "active", "suspended"]),
+  reviewNotes: z.string().trim().max(2000),
+});
+
+export async function updateFoundingPartnerApplication(formData: FormData) {
+  const { supabase } = await requireSuperAdmin();
+  const input = onboardingReviewSchema.parse({
+    onboardingId: formData.get("onboardingId"),
+    status: formData.get("status"),
+    reviewNotes: formData.get("reviewNotes") ?? "",
+  });
+  if (input.status === "changes_requested" && input.reviewNotes.length < 5) {
+    throw new Error("Add a short note explaining the requested changes.");
+  }
+  if (input.status === "rejected" && input.reviewNotes.length < 5) {
+    throw new Error("Add a short note explaining the rejection.");
+  }
+  const action = { under_review: "start_review", approved: "approve", changes_requested: "request_changes", rejected: "reject", active: "activate", suspended: "suspend" }[input.status];
+  const { error } = await supabase.rpc("admin_manage_founding_partner", { target_onboarding_id: input.onboardingId, target_action: action, target_notes: input.reviewNotes || null });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/founding-fifty");
+  revalidatePath("/founders/onboarding");
+  revalidatePath("/founders/onboarding/confirmation");
+}

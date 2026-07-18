@@ -4,6 +4,8 @@ import test from "node:test";
 import { isPremiumMembership, VENDOR_MEMBERSHIP_PLANS } from "../src/domain/vendor-memberships/catalog";
 
 const migration = readFileSync(new URL("../supabase/migrations/202607140010_vendor_marketplace_memberships.sql", import.meta.url), "utf8");
+const foundersPage = readFileSync(new URL("../app/founders/page.tsx", import.meta.url), "utf8");
+const foundersCheckoutButton = readFileSync(new URL("../src/components/founding-partner/checkout-submit-button.tsx", import.meta.url), "utf8");
 
 test("vendor membership catalog exposes the four canonical plans", () => {
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.code), ["free","verified","premium","founding_partner"]);
@@ -54,4 +56,20 @@ test("future Founding Fifty confirmations normalize to Founding Partner", () => 
 test("marketplace search discloses paid placement and preserves performance ordering", () => {
   assert.match(migration, /level\.code in \('premium','founding_partner'\)/);
   assert.match(migration, /order by membership_rank desc,is_verified desc,average_rating desc nulls last,completed_job_count desc,name/);
+});
+
+test("Founding Partner sales page states the governed offer and its limits", () => {
+  assert.match(foundersPage, /\$299 one-time/);
+  assert.match(foundersPage, /first 12 months of Premium/i);
+  assert.match(foundersPage, /locked preferred rate of \$49 per month/i);
+  assert.match(foundersPage, /does not guarantee leads, jobs, revenue/i);
+  assert.match(foundersPage, /Applications may be reviewed/i);
+});
+
+test("Founding Partner CTAs enter the real category and checkout workflow", () => {
+  assert.match(foundersPage, /startFoundingPartnerCheckout/);
+  assert.match(foundersPage, /<form action=\{startFoundingPartnerCheckout\}>/);
+  assert.match(foundersCheckoutButton, /Become a Founding Partner/);
+  assert.match(foundersPage, /Secure checkout through Stripe/);
+  assert.doesNotMatch(foundersPage, /fake success|payment=success/);
 });

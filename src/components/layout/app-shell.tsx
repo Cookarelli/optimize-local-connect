@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  Award,
   Building2,
   ClipboardList,
   LayoutDashboard,
@@ -35,6 +36,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   const organizationId = activeMembership?.organizationId;
   const visibleNav = [
     { label: "Overview", href: getRoleHome(user), icon: LayoutDashboard },
+    ...(user.isSuperAdmin ? [{ label: "Founding Partners", href: "/admin/founders", icon: Award }] : []),
     ...nav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
   ];
 

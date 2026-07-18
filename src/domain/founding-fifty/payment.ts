@@ -1,4 +1,4 @@
-export const FOUNDING_PAYMENT_PROVIDERS = ["paypal"] as const;
+export const FOUNDING_PAYMENT_PROVIDERS = ["stripe", "paypal"] as const;
 export type FoundingPaymentProviderKey = (typeof FOUNDING_PAYMENT_PROVIDERS)[number];
 
 export type CheckoutSession = {

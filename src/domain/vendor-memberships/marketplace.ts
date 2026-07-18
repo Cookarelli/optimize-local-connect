@@ -44,3 +44,49 @@ export type MarketplaceSearch = {
   licensed?: boolean;
   insured?: boolean;
 };
+
+export const publicFoundingPartnerCardSchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  logo_url: z.string().nullable(),
+  description: z.string().nullable(),
+  primary_category: z.string(),
+  additional_categories: z.array(z.string()),
+  service_areas: z.array(z.string()),
+  phone: z.string().nullable(),
+  public_email: z.string().email(),
+  website_url: z.string().nullable(),
+  google_business_profile_url: z.string().nullable(),
+  operating_hours: z.string().nullable(),
+  languages_spoken: z.array(z.string()),
+  offers_free_estimates: z.boolean(),
+  emergency_available: z.boolean(),
+  license_listed: z.boolean(),
+  insurance_status: z.string().nullable(),
+  total_count: z.coerce.number(),
+});
+
+export const publicFoundingPartnerProfileSchema = z.object({
+  slug: z.string(), name: z.string(),
+  logoUrl: z.string().nullable(), foundingPartner: z.literal(true), primaryCategory: z.string(),
+  additionalCategories: z.array(z.string()), description: z.string().nullable(), servicesOffered: z.array(z.string()),
+  serviceAreas: z.array(z.string()), serviceRadiusMiles: z.number().nullable(), customerType: z.string().nullable(),
+  phone: z.string().nullable(), email: z.string().email(), website: z.string().nullable(),
+  googleBusinessProfileUrl: z.string().nullable(),
+  operatingHours: z.string().nullable(), languagesSpoken: z.array(z.string()), offersFreeEstimates: z.boolean(),
+  offersFinancing: z.boolean(), emergencyAvailable: z.boolean(), licenseApplicable: z.boolean(), licenseNumber: z.string().nullable(),
+  insuranceStatus: z.string().nullable(), yearsInBusiness: z.number().nullable(), featuredImageUrl: z.string().nullable(),
+  publicDisplayConsent: z.literal(true),
+});
+
+export const publicMarketplaceFiltersSchema = z.object({
+  categories: z.array(z.object({ name: z.string(), slug: z.string(), count: z.coerce.number() })),
+  locations: z.array(z.object({ name: z.string(), count: z.coerce.number() })),
+});
+
+export type PublicFoundingPartnerCard = z.infer<typeof publicFoundingPartnerCardSchema>;
+export type PublicFoundingPartnerProfile = z.infer<typeof publicFoundingPartnerProfileSchema>;
+
+export function parsePublicFoundingPartnerCards(value: unknown) { return z.array(publicFoundingPartnerCardSchema).parse(value ?? []); }
+export function parsePublicFoundingPartnerProfile(value: unknown) { return publicFoundingPartnerProfileSchema.parse(value); }
+export function parsePublicMarketplaceFilters(value: unknown) { return publicMarketplaceFiltersSchema.parse(value ?? { categories: [], locations: [] }); }
