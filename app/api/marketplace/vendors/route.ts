@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 const querySchema = z.object({
   q: z.string().trim().max(120).optional(), location: z.string().trim().max(160).optional(), category: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
+  perk: z.enum(["any","priority_response","free_estimate","discount","free_service","multi_property_pricing"]).optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50), offset: z.coerce.number().int().min(0).default(0),
 }).strict();
 
@@ -12,8 +13,8 @@ export async function GET(request: Request) {
   if (!parsed.success) return Response.json({ error: "Invalid marketplace query.", details: parsed.error.flatten() }, { status: 400 });
   const input = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("search_public_founding_partners", {
-    search_query: input.q || null, location_filter: input.location ?? null, category_filter: input.category ?? null,
+  const { data, error } = await supabase.rpc("search_public_vendors", {
+    search_query: input.q || null, location_filter: input.location ?? null, category_filter: input.category ?? null, perk_filter: input.perk ?? null,
     result_limit: input.limit, result_offset: input.offset,
   });
   if (error) return Response.json({ error: "Marketplace search is unavailable." }, { status: 500 });

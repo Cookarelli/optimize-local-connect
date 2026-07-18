@@ -23,12 +23,14 @@ test("founder story preserves the 2008 local-economy lesson and manifesto", () =
   assert.match(companyPage, /one optimized decision at a time/);
 });
 
-test("investor hero positions the platform and Property Management launch", () => {
+test("homepage positions the Rockford Founding Partner network accurately", () => {
   const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(homePage, /AI-powered technology helping communities/);
-  assert.match(homePage, /save time, save money, and strengthen local economies/);
-  assert.match(homePage, /Connecting trusted local businesses with property managers and communities through intelligent technology/);
-  assert.match(homePage, /Property Management/);
-  assert.match(homePage, /First Industry Launch/);
-  assert.match(homePage, /Future community marketplaces/);
+  assert.match(homePage, /The Rockford Property Service Network/);
+  assert.match(homePage, /Connect With Rockford’s Growing/);
+  assert.match(homePage, /more than 9,000 rental doors/);
+  assert.match(homePage, /Become a Founding Partner — \{founderPrice\}/);
+  assert.match(homePage, /Founding Partners receive premium placement/);
+  assert.match(homePage, /renews automatically every 12 months until canceled/);
+  assert.match(homePage, /broader rental-property network/);
+  assert.doesNotMatch(homePage, /400 property managers (?:are|currently) (?:active|using)/i);
 });

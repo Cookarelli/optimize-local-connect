@@ -10,7 +10,7 @@ function fallbackName(slug: string) { return slug.split("-").map(word => word.ch
 
 async function categoryName(slug: string) {
   const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.rpc("get_public_founding_partner_filters");
+  const { data } = await supabase.rpc("get_public_vendor_filters");
   const filters = parsePublicMarketplaceFilters(data);
   return filters.categories.find(item => item.slug === slug)?.name ?? fallbackName(slug);
 }

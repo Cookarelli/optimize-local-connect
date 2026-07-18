@@ -1,5 +1,7 @@
 # Founder membership sales and payment audit
 
+> Historical audit. The canonical public offer was subsequently changed to a $299/year recurring subscription; see `README.md` and `docs/stripe-membership-production-audit.md` for the newer architecture.
+
 Audit date: 2026-07-18. Scope: the full repository, with emphasis on the one-time $299 Founding Partner journey. No application behavior was changed.
 
 ## Executive finding

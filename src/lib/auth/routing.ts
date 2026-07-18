@@ -7,6 +7,10 @@ export function safeInternalPath(value: string | null | undefined, fallback = AU
   return value;
 }
 
+export function isVendorEnrollmentPath(value: string) {
+  return /^\/onboarding\?plan=(founding_partner|network|preferred|founding_vendor|network_member|preferred_vendor)(?:&|$)/.test(value);
+}
+
 export function getRoleHome(user: AppUser): string {
   if (user.isSuperAdmin) return "/admin";
 

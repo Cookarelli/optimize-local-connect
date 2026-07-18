@@ -2,6 +2,9 @@
 
 import { useFormStatus } from "react-dom";
 import { ArrowRight, LoaderCircle } from "lucide-react";
+import { FOUNDING_PARTNER_PLAN, formatVendorPlanPrice } from "@/src/domain/vendor-memberships/catalog";
+
+const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
 export function CheckoutSubmitButton({ light = false, compact = false }: { light?: boolean; compact?: boolean }) {
   const { pending } = useFormStatus();
@@ -14,7 +17,7 @@ export function CheckoutSubmitButton({ light = false, compact = false }: { light
       } ${compact ? "min-h-10 px-4 text-xs sm:min-h-11 sm:px-5 sm:text-sm" : ""}`}
     >
       {pending ? <LoaderCircle aria-hidden="true" className="mr-2 size-4 animate-spin" /> : null}
-      {compact ? <span className="sm:hidden">{pending ? "Opening…" : "Join · $299"}</span> : null}
+      {compact ? <span className="sm:hidden">{pending ? "Opening…" : `Join · ${founderPrice}`}</span> : null}
       <span className={compact ? "hidden sm:inline" : ""}>{pending ? "Opening secure checkout…" : "Become a Founding Partner"}</span>
       {!pending ? <ArrowRight aria-hidden="true" className="ml-2 size-4" /> : null}
     </button>

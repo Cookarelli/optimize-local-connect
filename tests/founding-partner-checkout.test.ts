@@ -14,8 +14,10 @@ const migration = readFileSync(new URL("../supabase/migrations/202607140015_foun
 const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
 const stripe = readFileSync(new URL("../src/lib/founding-fifty/stripe.ts", import.meta.url), "utf8");
 const successPage = readFileSync(new URL("../app/founders/success/page.tsx", import.meta.url), "utf8");
+const checkoutAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
+const foundersPage = readFileSync(new URL("../app/founders/page.tsx", import.meta.url), "utf8");
 
-test("Founding Partner checkout parameters are fixed to the governed one-time offer", () => {
+test("legacy Founding Partner payment parameters remain fixed for historical reconciliation", () => {
   const attemptId = "11111111-1111-4111-8111-111111111111";
   const params = buildFoundingPartnerCheckoutParams({
     attemptId,
@@ -48,7 +50,8 @@ test("only completed and expired Checkout events enter the Founding Partner proc
 });
 
 test("webhook verification retrieves Stripe state and validates customer, intent, product, amount, and metadata", () => {
-  assert.match(webhook, /verifyStripeWebhook\(payload, request\.headers\.get\("stripe-signature"\)\)/);
+  assert.match(webhook, /constructStripeWebhookEvent\(payload,signature\)/);
+  assert.match(webhook, /Missing Stripe signature/);
   assert.match(webhook, /retrieveAndVerifyFoundingPartnerCheckout\(object\.id\)/);
   for (const contract of ["customerId", "paymentIntentId", "amountPaidCents", "customerEmail", "customerName", "membershipType", "paidAt"]) assert.match(webhook, new RegExp(contract));
   assert.match(stripe, /paymentIntent\.status !== "succeeded"/);
@@ -73,4 +76,19 @@ test("success page reads verified database state instead of trusting the session
   assert.match(successPage, /payment_status === "paid"/);
   assert.match(successPage, /amount_paid_cents === 29900/);
   assert.doesNotMatch(successPage, /retrieveAndVerifyFoundingPartnerCheckout|payment=success/);
+});
+
+test("public Founder CTA no longer creates a legacy one-time Checkout Session", () => {
+  assert.doesNotMatch(checkoutAction, /createFoundingPartnerStripeCheckout|reserve_founding_partner_checkout/);
+  assert.match(checkoutAction, /FOUNDING_PARTNER_PLAN\.key/);
+  assert.match(checkoutAction, /\/sign-in\?next=/);
+  assert.match(foundersPage, /subscription checkout/i);
+  assert.match(successPage, /lookupFailed/);
+  assert.match(successPage, /Your payment status was not changed/);
+});
+
+test("missing and malformed Checkout session ids cannot create a paid state", () => {
+  assert.match(successPage, /const sessionSchema = z\.string\(\)\.regex/);
+  assert.match(successPage, /const invalid = !sessionId\.success/);
+  assert.match(successPage, /No payment status was inferred from this page address/);
 });

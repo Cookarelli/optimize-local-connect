@@ -4,11 +4,13 @@ import { CheckCircle2 } from "lucide-react";
 import { SignInForm } from "@/src/components/auth/sign-in-form";
 import { Logo } from "@/src/components/brand/logo";
 import { MissionSignature } from "@/src/components/brand/mission-signature";
+import { isVendorEnrollmentPath, safeInternalPath } from "@/src/lib/auth/routing";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default async function SignInPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const params = await searchParams;
+  const vendorEnrollment = isVendorEnrollmentPath(safeInternalPath(params.next));
   return (
     <main className="grid min-h-dvh bg-stone-50 lg:grid-cols-[1.05fr_.95fr]">
       <section className="hidden bg-slate-950 p-12 text-white lg:flex lg:flex-col lg:justify-between">
@@ -30,10 +32,10 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
         <div className="w-full max-w-md">
           <div className="mb-10 lg:hidden"><Logo /></div>
           <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,.08)] sm:p-9">
-            <p className="text-sm font-semibold text-emerald-700">Welcome back</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">Sign in to Connect™</h2>
-            <p className="mb-7 mt-2 text-sm leading-6 text-slate-500">Access is invite-only for verified property teams and service partners.</p>
-            <SignInForm next={params.next} />
+            <p className="text-sm font-semibold text-emerald-700">{vendorEnrollment ? "Vendor enrollment" : "Welcome back"}</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{vendorEnrollment ? "Create or access your account" : "Sign in to Connect™"}</h2>
+            <p className="mb-7 mt-2 text-sm leading-6 text-slate-500">{vendorEnrollment ? "Use a secure email link or Google to verify your identity before creating the vendor organization and opening Checkout." : "Access is invite-only for verified property teams and service partners."}</p>
+            <SignInForm next={params.next} allowSignup={vendorEnrollment} />
             {params.error ? <p role="alert" className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-800">That sign-in link could not be completed. Please try again.</p> : null}
           </div>
           <p className="mt-6 text-center text-sm text-slate-500">Need access? <Link href="/#contact" className="font-semibold text-slate-900 underline-offset-4 hover:underline">Request early access</Link></p>

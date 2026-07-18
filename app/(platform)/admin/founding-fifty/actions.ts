@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/src/lib/auth/session";
+import { retrieveAndVerifyStripeCheckout } from "@/src/lib/founding-fifty/stripe";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 async function requireSuperAdmin() {
@@ -24,8 +25,10 @@ export async function updateFoundingSeat(formData: FormData) {
 
 export async function approveFoundingPayment(formData: FormData) {
   const { supabase } = await requireSuperAdmin();
-  const input = z.object({ claimId: z.string().uuid(), paymentReference: z.string().trim().min(3).max(200) }).parse({ claimId: formData.get("claimId"), paymentReference: formData.get("paymentReference") });
-  const { error } = await supabase.rpc("confirm_founding_claim", { target_claim_id: input.claimId, target_payment_reference: input.paymentReference, confirmation_source: "manual_admin" });
+  const input = z.object({ claimId: z.string().uuid(), paymentReference: z.string().regex(/^cs_(test_|live_)?[A-Za-z0-9]+$/) }).parse({ claimId: formData.get("claimId"), paymentReference: formData.get("paymentReference") });
+  const verified = await retrieveAndVerifyStripeCheckout(input.paymentReference);
+  if (!verified || verified.claimId !== input.claimId) throw new Error("Stripe did not verify a matching paid $299 Founding claim Checkout Session.");
+  const { error } = await supabase.rpc("confirm_founding_claim", { target_claim_id: input.claimId, target_payment_reference: verified.paymentIntentId, confirmation_source: "manual_admin_verified_stripe" });
   if (error) throw new Error(error.message);
   revalidatePath("/admin/founding-fifty"); revalidatePath("/founding-fifty");
 }

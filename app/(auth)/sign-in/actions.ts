@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAppOrigin } from "@/src/lib/auth/origin";
-import { safeInternalPath } from "@/src/lib/auth/routing";
+import { isVendorEnrollmentPath, safeInternalPath } from "@/src/lib/auth/routing";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 export type AuthState = {
@@ -57,7 +57,7 @@ export async function sendMagicLink(
     const { error } = await supabase.auth.signInWithOtp({
       email: email.data,
       options: {
-        shouldCreateUser: false,
+        shouldCreateUser: isVendorEnrollmentPath(next),
         emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });

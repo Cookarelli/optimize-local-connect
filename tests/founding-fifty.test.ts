@@ -7,6 +7,7 @@ const migration = readFileSync(new URL("../supabase/migrations/202607140008_foun
 const checkoutMigration = readFileSync(new URL("../supabase/migrations/202607140014_founder_checkout_hardening.sql", import.meta.url), "utf8");
 const stripeWebhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
 const stripeAdapter = readFileSync(new URL("../src/lib/founding-fifty/stripe.ts", import.meta.url), "utf8");
+const adminActions = readFileSync(new URL("../app/(platform)/admin/founding-fifty/actions.ts", import.meta.url), "utf8");
 
 test("PayPal outcomes distinguish verified, failed, cancelled, and irrelevant events", () => {
   assert.equal(classifyPayPalEvent("PAYMENT.CAPTURE.COMPLETED"), "verified");
@@ -46,6 +47,9 @@ test("manual approval and webhook verification use the same atomic confirmation"
   assert.match(migration, /public\.is_super_admin\(\).*service_role/);
   assert.match(migration, /now\(\)\+interval '12 months'/);
   assert.match(migration, /'founding_fifty'/);
+  assert.match(adminActions, /retrieveAndVerifyStripeCheckout/);
+  assert.match(adminActions, /verified\.claimId !== input\.claimId/);
+  assert.doesNotMatch(adminActions, /target_payment_reference: input\.paymentReference/);
 });
 
 test("permanent founding numbers require an explicit audited reassignment", () => {
@@ -72,11 +76,17 @@ test("Stripe Checkout binds a server-priced session to the claim and product", (
 });
 
 test("Stripe fulfillment requires a signed, retrieved, fully-paid $299 session", () => {
-  assert.match(stripeWebhook, /verifyStripeWebhook/);
+  assert.match(stripeWebhook, /constructStripeWebhookEvent/);
   assert.match(stripeWebhook, /retrieveAndVerifyStripeCheckout/);
   assert.match(stripeAdapter, /payment_status !== "paid"/);
   assert.match(stripeAdapter, /amount_total !== 29900/);
   assert.match(stripeAdapter, /session\.currency\?\.toLowerCase\(\) !== "usd"/);
+});
+
+test("standard billing webhook verification is not coupled to the legacy Founder product", () => {
+  assert.match(stripeAdapter, /stripeWebhookEnvSchema/);
+  const webhookHelper = stripeAdapter.slice(stripeAdapter.indexOf("export async function constructStripeWebhookEvent"));
+  assert.doesNotMatch(webhookHelper, /getStripeEnv\(\)/);
 });
 
 test("claim owners no longer receive broad direct update permission", () => {

@@ -22,30 +22,33 @@ import {
 } from "lucide-react";
 import { Logo } from "@/src/components/brand/logo";
 import { CheckoutSubmitButton } from "@/src/components/founding-partner/checkout-submit-button";
+import { FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice } from "@/src/domain/vendor-memberships/catalog";
 import { startFoundingPartnerCheckout } from "./actions";
+
+const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
 export const metadata: Metadata = {
   title: "Founding Partner Membership",
   description:
-    "Join Optimize Local Connect as a Founding Partner for a one-time $299 payment. Build a stronger marketplace profile and help shape the tools local service businesses need.",
+    `Join Optimize Local Connect as a Founding Partner for ${founderPrice}. The subscription renews annually until canceled.`,
   alternates: { canonical: "/founders" },
   openGraph: {
     title: "Optimize Local Connect Founding Partner",
-    description: "$299 one-time. Preferred visibility, early access, and permanent Founding Partner recognition.",
-    images: [{ url: "/og-founders.png", width: 1536, height: 1024, alt: "Optimize Local Connect Founding Partner — $299 one-time" }],
+    description: `${founderPrice}. Preferred visibility, early access, and Founder recognition while the membership remains eligible.`,
+    images: [{ url: "/og-founders.png", width: 1536, height: 1024, alt: `Optimize Local Connect Founding Partner — ${founderPrice}` }],
   },
   twitter: { card: "summary_large_image", images: ["/og-founders.png"] },
 };
 
 const benefits = [
-  [Award, "Founding Partner badge", "Permanent recognition that your business joined during the founding period."],
+  [Award, "Founding Partner badge", "Founder recognition remains attached to your organization while the subscription is active or in an approved grace period."],
   [Store, "Enhanced vendor profile", "A richer place to present your business, experience, and customer-facing details."],
   [SearchCheck, "Priority marketplace placement", "Preferred visibility during the founding period, subject to relevance, verification, and marketplace rules."],
   [MapPin, "Services and service areas", "List what you do and the communities your team is prepared to serve."],
   [Handshake, "Direct contact opportunities", "Qualified buyers can request service or contact your business through your marketplace profile."],
   [Sparkles, "Early product access", "Get access to selected new marketplace tools as they become available."],
   [MessageSquareText, "A voice in the product", "Share practical feedback from the field and help us prioritize what local vendors need."],
-  [ShieldCheck, "Preferred renewal pricing", "After the included first Premium year, the current program rules lock a preferred $49/month renewal rate."],
+  [ShieldCheck, "Clear annual billing", `The ${founderPrice} subscription starts today and automatically renews every 12 months until canceled.`],
 ] as const;
 
 const audiences = [
@@ -62,14 +65,14 @@ const audiences = [
 ];
 
 const steps = [
-  ["01", "Join", "Open Stripe's hosted checkout and complete the one-time $299 payment. Stripe collects your email and business name."],
+  ["01", "Join", `Choose the Founding Partner plan, sign in, and complete Stripe's hosted subscription checkout. The first ${founderPrice} charge is collected immediately.`],
   ["02", "Submit business details", "Tell us who you serve, what work you perform, and where your team operates."],
   ["03", "Profile reviewed", "We review business information and may request credentials before the listing is published."],
   ["04", "Listing activated", "Approved profiles become available in the marketplace with their Founding Partner recognition."],
 ] as const;
 
 const faqs = [
-  ["Is this a subscription?", "No. The Founding Partner purchase is a one-time $299 payment and includes the first 12 months of Premium marketplace benefits. It does not start an automatic subscription at checkout. Under the current program rules, continued Premium access after that year is optional at a locked preferred rate of $49 per month."],
+  ["Is this a subscription?", `Yes. The Founding Partner membership is ${founderPrice}. You are charged immediately at Checkout, and it automatically renews every 12 months until canceled.`],
   ["Are leads or revenue guaranteed?", "No. Optimize Local Connect does not guarantee leads, jobs, revenue, marketplace rank, or a return on the membership. The opportunity is preferred visibility and early participation in a growing local marketplace."],
   ["What happens after payment?", "Stripe sends the payment result directly to our server. After the payment is verified, we save your Founding Partner record and prepare your business information for review. A browser confirmation alone never activates a membership."],
   ["Can any business join?", "The offer is intended for legitimate local service businesses. Applications may be reviewed for fit, quality, category availability, and the information or credentials needed for a trustworthy marketplace."],
@@ -104,7 +107,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
     <main className="min-h-dvh bg-[#f7f8f4] text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#f7f8f4]/95 backdrop-blur-xl">
         <div className="mx-auto flex min-h-18 max-w-[90rem] items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
-          <Link href="/" aria-label="Optimize Local Connect home"><Logo /></Link>
+          <Logo />
           <nav aria-label="Founding Partner page" className="flex items-center gap-1 sm:gap-3">
             <a href="#details" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white lg:inline-flex">What you receive</a>
             <a href="#faq" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white sm:inline-flex">FAQ</a>
@@ -139,11 +142,12 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <aside className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[.06] shadow-2xl shadow-black/20 backdrop-blur">
             <div className="border-b border-white/10 p-6 sm:p-8">
               <p className="text-xs font-black uppercase tracking-[.18em] text-emerald-400">Founding Partner membership</p>
-              <div className="mt-5 flex items-end gap-3"><span className="text-7xl font-semibold tracking-[-.07em]">$299</span><span className="pb-2 text-sm font-bold text-slate-400">one-time</span></div>
+              <div className="mt-5 flex items-end gap-3"><span className="text-7xl font-semibold tracking-[-.07em]">${FOUNDING_PARTNER_PLAN.amountCents / 100}</span><span className="pb-2 text-sm font-bold text-slate-400">per year</span></div>
+              <p className="mt-3 text-sm font-semibold text-emerald-300">Charged today. Renews automatically every 12 months until canceled.</p>
               <p className="mt-5 text-base leading-7 text-slate-300">One good job can cover the cost. The membership creates opportunity; it does not promise leads or revenue.</p>
             </div>
             <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-8">
-              {["Founding Partner badge", "Enhanced profile", "Priority placement", "First Premium year included"].map((item) => (
+              {["Founding Partner badge", "Enhanced profile", "Priority placement", "Annual membership"].map((item) => (
                 <p key={item} className="flex gap-2 text-sm leading-6 text-slate-200"><Check aria-hidden="true" className="mt-1 size-4 shrink-0 text-emerald-400" />{item}</p>
               ))}
             </div>
@@ -154,7 +158,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
       <section aria-label="Offer summary" className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-[90rem] gap-px bg-slate-200 sm:grid-cols-3">
           {[
-            [BriefcaseBusiness, "Built for working service businesses", "Straightforward value without a long-term contract."],
+            [BriefcaseBusiness, "Built for working service businesses", "A straightforward annual membership you can manage through Stripe."],
             [Users, "Reach local decision-makers", "A profile designed for the people who hire local vendors."],
             [Clock3, "Join during the early marketplace period", "Receive early-partner recognition as Connect grows."],
           ].map(([Icon, title, copy]) => {
@@ -228,7 +232,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
         <div className="relative mx-auto max-w-[90rem] overflow-hidden rounded-[2rem] bg-emerald-700 px-6 py-14 text-white sm:px-12 sm:py-18 lg:px-18">
           <div aria-hidden="true" className="absolute -right-28 -top-28 size-80 rounded-full border-[52px] border-white/[.06]" />
           <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Partner</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">Make your local business easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">$299 one-time. Limited availability by service category. No automatic subscription and no guaranteed leads.</p></div>
+            <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Partner</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">Make your local business easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">{founderPrice}. Charged immediately and automatically renews every 12 months until canceled. Limited availability; no guaranteed leads.</p><p className="mt-3 max-w-2xl text-xs leading-5 text-emerald-200">{FOUNDING_PARTNER_RENEWAL_DISCLOSURE}</p></div>
             <div className="flex flex-col items-start gap-3 lg:items-stretch"><CheckoutForm light /><Link href="/founding-fifty" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">Review category availability</Link></div>
           </div>
         </div>

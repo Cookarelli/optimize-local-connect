@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CheckCircle2, Circle, LockKeyhole, Save, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Logo } from "@/src/components/brand/logo";
@@ -23,10 +22,10 @@ export default async function FoundingPartnerOnboardingPage() {
   if (!payment || !onboarding) redirect("/founders?onboarding=payment_not_verified");
 
   return <main className="min-h-dvh bg-[#f7f8f4] text-slate-950">
-    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex min-h-18 max-w-[90rem] items-center justify-between px-5 py-3 sm:px-8 lg:px-12"><Link href="/"><Logo /></Link><span className="inline-flex items-center gap-2 text-xs font-bold text-slate-500"><LockKeyhole aria-hidden="true" className="size-3.5" />Secure paid application</span></div></header>
+    <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex min-h-18 max-w-[90rem] items-center justify-between px-5 py-3 sm:px-8 lg:px-12"><Logo /><span className="inline-flex items-center gap-2 text-xs font-bold text-slate-500"><LockKeyhole aria-hidden="true" className="size-3.5" />Secure paid application</span></div></header>
     <div className="mx-auto grid max-w-[90rem] gap-8 px-5 py-8 sm:px-8 sm:py-12 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-12">
       <aside className="h-fit space-y-5 lg:sticky lg:top-6">
-        <section className="rounded-[1.5rem] bg-slate-950 p-6 text-white"><ShieldCheck aria-hidden="true" className="size-7 text-emerald-400" /><p className="mt-7 text-xs font-black uppercase tracking-[.16em] text-emerald-400">Payment confirmed</p><p className="mt-3 text-3xl font-semibold tracking-[-.05em]">$299.00</p><p className="mt-1 text-xs text-slate-400">One-time Founding Partner payment</p><div className="mt-6 border-t border-white/10 pt-5"><p className="text-sm font-bold">{payment.customer_name ?? "Founding Partner"}</p><p className="mt-1 break-all text-xs text-slate-400">{payment.customer_email}</p></div></section>
+        <section className="rounded-[1.5rem] bg-slate-950 p-6 text-white"><ShieldCheck aria-hidden="true" className="size-7 text-emerald-400" /><p className="mt-7 text-xs font-black uppercase tracking-[.16em] text-emerald-400">Payment confirmed</p><p className="mt-3 text-3xl font-semibold tracking-[-.05em]">$299.00</p><p className="mt-1 text-xs text-slate-400">Verified Founder payment</p><div className="mt-6 border-t border-white/10 pt-5"><p className="text-sm font-bold">{payment.customer_name ?? "Founding Partner"}</p><p className="mt-1 break-all text-xs text-slate-400">{payment.customer_email}</p></div></section>
         <section aria-label="Application progress" className="rounded-[1.5rem] border border-slate-200 bg-white p-5"><p className="text-xs font-black uppercase tracking-[.14em] text-slate-400">Application progress</p><ol className="mt-5 space-y-4 text-sm"><li className="flex gap-3"><CheckCircle2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-600" /><span><strong className="block">Payment verified</strong><span className="text-xs text-slate-500">Completed</span></span></li><li className="flex gap-3"><Save aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-600" /><span><strong className="block">Business profile</strong><span className="text-xs text-slate-500">Save as you work</span></span></li><li className="flex gap-3"><Circle aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-slate-300" /><span><strong className="block">Admin review</strong><span className="text-xs text-slate-500">Begins after submission</span></span></li></ol></section>
       </aside>
       <section className="min-w-0">

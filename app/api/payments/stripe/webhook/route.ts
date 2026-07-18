@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FOUNDING_PARTNER_MEMBERSHIP_TYPE } from "@/src/domain/founding-partner/checkout";
-import { retrieveAndVerifyFoundingPartnerCheckout, retrieveAndVerifyStripeCheckout, verifyStripeWebhook } from "@/src/lib/founding-fifty/stripe";
+import { constructStripeWebhookEvent, retrieveAndVerifyFoundingPartnerCheckout, retrieveAndVerifyStripeCheckout } from "@/src/lib/founding-fifty/stripe";
+import { isVendorMembershipCheckout, MEMBERSHIP_STRIPE_EVENTS, processVendorMembershipStripeEvent } from "@/src/lib/stripe/memberships";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -22,12 +23,21 @@ function logWebhookError(label: string, eventId: string, error: unknown) {
 
 export async function POST(request: Request) {
   const payload = await request.text();
-  if (!await verifyStripeWebhook(payload, request.headers.get("stripe-signature"))) {
-    return NextResponse.json({ error: "Webhook verification failed" }, { status: 401 });
+  if (!process.env.STRIPE_WEBHOOK_SECRET?.startsWith("whsec_")) {
+    return NextResponse.json({ error: "Billing webhook is not configured" }, { status: 500 });
   }
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) return NextResponse.json({ error: "Missing Stripe signature" }, { status: 400 });
+  let stripeEvent;
+  try { stripeEvent=await constructStripeWebhookEvent(payload,signature); }
+  catch { return NextResponse.json({ error: "Webhook verification failed" }, { status: 401 }); }
   let parsedBody: unknown;
   try { parsedBody = JSON.parse(payload); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = eventSchema.safeParse(parsedBody);
+  if(MEMBERSHIP_STRIPE_EVENTS.has(stripeEvent.type)&&(!stripeEvent.type.startsWith("checkout.session.")||isVendorMembershipCheckout(stripeEvent))){
+    try { const processed=await processVendorMembershipStripeEvent(stripeEvent,parsedBody); return NextResponse.json({received:true,processed}); }
+    catch(error){ console.error("vendor_membership_webhook_failed",{eventId:stripeEvent.id,errorType:error instanceof Error?error.name:"UnknownError"}); const admin=createSupabaseAdminClient(); await admin.from("vendor_membership_provider_events").upsert({provider_event_id:stripeEvent.id,event_type:stripeEvent.type,provider_object_id:(stripeEvent.data.object as {id?:string}).id??null,payload:parsedBody,processing_error:error instanceof Error?error.message.slice(0,500):"Unknown error"},{onConflict:"provider,provider_event_id"}); return NextResponse.json({error:"Membership event could not be processed"},{status:500}); }
+  }
   if (!parsed.success) return NextResponse.json({ error: "Invalid Stripe event" }, { status: 400 });
 
   const event = parsed.data;

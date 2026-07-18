@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getRoleHome, safeInternalPath } from "../src/lib/auth/routing";
+import { getRoleHome, isVendorEnrollmentPath, safeInternalPath } from "../src/lib/auth/routing";
 import type { AppUser, Membership } from "../src/domain/auth/types";
 
 const membership = (overrides: Partial<Membership> = {}): Membership => ({
@@ -27,6 +27,13 @@ test("safeInternalPath blocks external redirect forms", () => {
   assert.equal(safeInternalPath("//attacker.example"), "/dashboard");
   assert.equal(safeInternalPath("/\\attacker.example"), "/dashboard");
   assert.equal(safeInternalPath("https://attacker.example"), "/dashboard");
+});
+
+test("only recognized membership onboarding paths may create a vendor auth user", () => {
+  assert.equal(isVendorEnrollmentPath("/onboarding?plan=founding_vendor"), true);
+  assert.equal(isVendorEnrollmentPath("/onboarding?plan=network_member"), true);
+  assert.equal(isVendorEnrollmentPath("/onboarding?plan=unknown"), false);
+  assert.equal(isVendorEnrollmentPath("/admin"), false);
 });
 
 test("role homes separate platform, property, and vendor operations", () => {

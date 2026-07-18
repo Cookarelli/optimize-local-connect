@@ -1,58 +1,65 @@
-export const VENDOR_MEMBERSHIP_CODES = ["free", "verified", "premium", "founding_partner"] as const;
-export type VendorMembershipCode = (typeof VENDOR_MEMBERSHIP_CODES)[number];
+export const VENDOR_PLAN_KEYS = ["founding_partner", "network", "preferred"] as const;
+export type VendorPlanKey = (typeof VENDOR_PLAN_KEYS)[number];
+export type VendorMembershipCode = VendorPlanKey;
+export type VendorMembershipStatus = "pending" | "active" | "trialing" | "past_due" | "canceled" | "expired" | "complimentary" | "manually_granted";
 
 export type VendorMembershipPlan = {
+  key: VendorPlanKey;
   code: VendorMembershipCode;
   name: string;
-  price: string;
-  cadence: string;
+  amountCents: number;
+  currency: "USD";
+  interval: "month" | "year";
+  checkoutMode: "subscription";
+  stripeProductEnv: "STRIPE_FOUNDING_PRODUCT_ID" | "STRIPE_NETWORK_PRODUCT_ID" | "STRIPE_PREFERRED_PRODUCT_ID";
+  stripePriceEnv: "STRIPE_FOUNDING_VENDOR_PRICE_ID" | "STRIPE_NETWORK_MEMBER_PRICE_ID" | "STRIPE_PREFERRED_VENDOR_PRICE_ID";
   description: string;
   features: readonly string[];
-  featured?: boolean;
+  entitlements: { directory: boolean; propertyManagerPerk: boolean; opportunities: boolean; dashboard: boolean; preferredPlacement: boolean; founderBadge: boolean };
+  badge: "founder" | "preferred" | null;
+  placementPriority: number;
   capacity?: number;
+  renewal: { behavior: "same_stripe_price"; configurable: true };
+  paymentRequired: boolean;
+  manualApprovalRequired: boolean;
+  publicationEligible: boolean;
+  publiclyPurchasable: boolean;
 };
 
 export const VENDOR_MEMBERSHIP_PLANS: readonly VendorMembershipPlan[] = [
-  {
-    code: "free",
-    name: "Free",
-    price: "$0",
-    cadence: "No monthly fee",
-    description: "A professional starting point for local providers building their Connect presence.",
-    features: ["Marketplace profile", "Standard search placement", "Up to 5 quotes per month"],
-  },
-  {
-    code: "verified",
-    name: "Verified",
-    price: "$0",
-    cadence: "Credential review required",
-    description: "Current business credentials and stronger visibility for trusted local work.",
-    features: ["License verification", "Insurance verification", "Priority search", "Verified badge"],
-  },
-  {
-    code: "premium",
-    name: "Premium",
-    price: "$49",
-    cadence: "per month",
-    description: "Placement, promotion, and intelligence tools for providers ready to grow.",
-    features: ["AI placement", "Homepage placement", "Videos", "Coupons", "Analytics", "Push notifications"],
-    featured: true,
-  },
-  {
-    code: "founding_partner",
-    name: "Founding Partner",
-    price: "$299",
-    cadence: "One-time · 50 vendors only",
-    description: "Permanent recognition for the first fifty businesses helping shape Optimize Local Connect.",
-    features: ["One year of Premium", "Permanent Founding Partner badge", "Locked renewal pricing", "All Premium benefits"],
-    capacity: 50,
-  },
+  { key:"founding_partner",code:"founding_partner",name:"Founding Partner",amountCents:29900,currency:"USD",interval:"year",checkoutMode:"subscription",stripeProductEnv:"STRIPE_FOUNDING_PRODUCT_ID",stripePriceEnv:"STRIPE_FOUNDING_VENDOR_PRICE_ID",description:"Founding recognition and premium visibility for early Rockford-area vendors. Renews annually until canceled.",features:["Founder badge","Premium placement","Property Manager Perk","Core vendor-network access"],entitlements:{directory:true,propertyManagerPerk:true,opportunities:true,dashboard:true,preferredPlacement:true,founderBadge:true},badge:"founder",placementPriority:30,capacity:50,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
+  { key:"network",code:"network",name:"Network Member",amountCents:1900,currency:"USD",interval:"month",checkoutMode:"subscription",stripeProductEnv:"STRIPE_NETWORK_PRODUCT_ID",stripePriceEnv:"STRIPE_NETWORK_MEMBER_PRICE_ID",description:"A paid business profile and access to the local property-management network.",features:["Paid directory visibility","Standard business profile","Property-manager opportunities"],entitlements:{directory:true,propertyManagerPerk:false,opportunities:true,dashboard:true,preferredPlacement:false,founderBadge:false},badge:null,placementPriority:10,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
+  { key:"preferred",code:"preferred",name:"Preferred Vendor",amountCents:4900,currency:"USD",interval:"month",checkoutMode:"subscription",stripeProductEnv:"STRIPE_PREFERRED_PRODUCT_ID",stripePriceEnv:"STRIPE_PREFERRED_VENDOR_PRICE_ID",description:"Enhanced marketplace visibility for vendors ready to build repeat property-manager relationships.",features:["Enhanced placement","Preferred badge","Property Manager Perk","Expanded profile and visibility"],entitlements:{directory:true,propertyManagerPerk:true,opportunities:true,dashboard:true,preferredPlacement:true,founderBadge:false},badge:"preferred",placementPriority:20,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
 ] as const;
 
-export function isPremiumMembership(code: string): boolean {
-  return code === "premium" || code === "founding_partner";
+export const FOUNDING_PARTNER_PLAN = VENDOR_MEMBERSHIP_PLANS[0];
+export const FOUNDING_PARTNER_RENEWAL_DISCLOSURE = "You are charged $299 when you subscribe. Your subscription automatically renews every 12 months at the then-current renewal price shown before purchase until canceled.";
+
+export function formatVendorPlanPrice(plan: VendorMembershipPlan) {
+  return `$${plan.amountCents / 100}/${plan.interval}`;
 }
 
-export function membershipLabel(code: string): string {
-  return VENDOR_MEMBERSHIP_PLANS.find((plan) => plan.code === code)?.name ?? "Free";
+const LEGACY_PLAN_ALIASES: Record<string, VendorPlanKey> = { founding_vendor:"founding_partner",network_member:"network",preferred_vendor:"preferred",premium:"preferred" };
+export function normalizeVendorPlanKey(key:string):VendorPlanKey|undefined { const normalized=LEGACY_PLAN_ALIASES[key]??key;return VENDOR_PLAN_KEYS.includes(normalized as VendorPlanKey)?normalized as VendorPlanKey:undefined; }
+export function getVendorPlan(key: string) { const normalized=normalizeVendorPlanKey(key);return VENDOR_MEMBERSHIP_PLANS.find(plan=>plan.key===normalized); }
+export function getVendorPlanByCode(code: string) { return getVendorPlan(code); }
+type VendorPlanEnvironment = Record<string, string | undefined>;
+export function getVendorPlanProductId(plan: VendorMembershipPlan, env: VendorPlanEnvironment = process.env) {
+  const value=env[plan.stripeProductEnv];
+  if (!value?.startsWith("prod_")) throw new Error(`${plan.stripeProductEnv} must be configured with a Stripe Product ID.`);
+  return value;
 }
+export function getVendorPlanPriceId(plan: VendorMembershipPlan, env: VendorPlanEnvironment = process.env) {
+  const value=env[plan.stripePriceEnv];
+  if (!value?.startsWith("price_")) throw new Error(`${plan.stripePriceEnv} must be configured with a Stripe recurring Price ID.`);
+  return value;
+}
+export function validatePurchasableVendorPlanStripeConfig(env: VendorPlanEnvironment = process.env) {
+  return VENDOR_MEMBERSHIP_PLANS.filter(plan=>plan.paymentRequired&&plan.publiclyPurchasable).map(plan=>({
+    key:plan.key,
+    productId:getVendorPlanProductId(plan,env),
+    priceId:getVendorPlanPriceId(plan,env),
+  }));
+}
+export function isPremiumMembership(code:string){return Boolean(getVendorPlanByCode(code)?.entitlements.preferredPlacement);}
+export function membershipLabel(code:string){return getVendorPlanByCode(code)?.name??"Inactive";}

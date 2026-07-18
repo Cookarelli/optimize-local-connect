@@ -3,6 +3,7 @@ import {
   Award,
   Building2,
   ClipboardList,
+  CreditCard,
   LayoutDashboard,
   MapPin,
   Menu,
@@ -37,6 +38,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   const visibleNav = [
     { label: "Overview", href: getRoleHome(user), icon: LayoutDashboard },
     ...(user.isSuperAdmin ? [{ label: "Founding Partners", href: "/admin/founders", icon: Award }] : []),
+    ...(activeMembership && ["owner", "admin"].includes(activeMembership.role) ? [{ label: "Connected Payments", href: "/payments/connect", icon: CreditCard }] : []),
     ...nav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
   ];
 

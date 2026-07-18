@@ -63,12 +63,22 @@ export const publicFoundingPartnerCardSchema = z.object({
   emergency_available: z.boolean(),
   license_listed: z.boolean(),
   insurance_status: z.string().nullable(),
+  membership_code: z.enum(["founding_partner","network","preferred"]),
+  membership_name: z.string(),
+  badge_label: z.string().nullable(),
+  is_founding_partner: z.boolean(),
+  property_manager_perk_enabled: z.boolean(),
+  property_manager_perk_title: z.string().nullable(),
+  property_manager_perk_description: z.string().nullable(),
+  property_manager_perk_type: z.string().nullable(),
+  property_manager_perk_terms: z.string().nullable(),
+  property_manager_perk_expiration_date: z.string().nullable(),
   total_count: z.coerce.number(),
 });
 
 export const publicFoundingPartnerProfileSchema = z.object({
   slug: z.string(), name: z.string(),
-  logoUrl: z.string().nullable(), foundingPartner: z.literal(true), primaryCategory: z.string(),
+  logoUrl: z.string().nullable(), foundingPartner: z.boolean(), tierCode: z.enum(["founding_partner","network","preferred"]), membershipName:z.string(), badgeLabel:z.string().nullable(), primaryCategory: z.string(),
   additionalCategories: z.array(z.string()), description: z.string().nullable(), servicesOffered: z.array(z.string()),
   serviceAreas: z.array(z.string()), serviceRadiusMiles: z.number().nullable(), customerType: z.string().nullable(),
   phone: z.string().nullable(), email: z.string().email(), website: z.string().nullable(),
@@ -77,6 +87,7 @@ export const publicFoundingPartnerProfileSchema = z.object({
   offersFinancing: z.boolean(), emergencyAvailable: z.boolean(), licenseApplicable: z.boolean(), licenseNumber: z.string().nullable(),
   insuranceStatus: z.string().nullable(), yearsInBusiness: z.number().nullable(), featuredImageUrl: z.string().nullable(),
   publicDisplayConsent: z.literal(true),
+  propertyManagerPerk: z.object({ enabled: z.literal(true), title: z.string(), description: z.string(), type: z.string(), terms: z.string().nullable(), expirationDate: z.string().nullable() }).nullable(),
 });
 
 export const publicMarketplaceFiltersSchema = z.object({

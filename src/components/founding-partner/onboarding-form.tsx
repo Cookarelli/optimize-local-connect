@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { AlertCircle, ArrowRight, Building2, Camera, Check, FileCheck2, ImageUp, Languages, LoaderCircle, MapPin, Save, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, Building2, Camera, Check, FileCheck2, Gift, ImageUp, Languages, LoaderCircle, MapPin, Save, ShieldCheck } from "lucide-react";
 import { saveFoundingPartnerOnboarding, type OnboardingState } from "@/app/founders/actions";
 import { FOUNDING_VERTICAL_CATALOG } from "@/src/domain/founding-fifty/catalog";
+import { PROPERTY_MANAGER_PERK_TYPES, propertyManagerPerkSuggestions } from "@/src/domain/vendor-memberships/property-manager-perk";
 
 const initialState: OnboardingState = { status: "idle" };
 const input = "mt-1.5 min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
@@ -39,6 +40,12 @@ type Application = {
   offers_free_estimates: boolean;
   offers_financing: boolean;
   languages_spoken: string[] | null;
+  property_manager_perk_enabled: boolean;
+  property_manager_perk_title: string | null;
+  property_manager_perk_description: string | null;
+  property_manager_perk_type: string | null;
+  property_manager_perk_terms: string | null;
+  property_manager_perk_expiration_date: string | null;
   accuracy_confirmed: boolean;
   public_display_consent: boolean;
   terms_privacy_accepted: boolean;
@@ -66,6 +73,12 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
   const [state, action, pending] = useActionState(saveFoundingPartnerOnboarding, initialState);
   const [licenseApplicable, setLicenseApplicable] = useState(application.license_applicable);
   const [progress, setProgress] = useState(() => savedProgress(application));
+  const [category, setCategory] = useState(application.primary_service_category ?? "");
+  const [perkEnabled, setPerkEnabled] = useState(application.property_manager_perk_enabled);
+  const [perkTitle, setPerkTitle] = useState(application.property_manager_perk_title ?? "");
+  const [perkDescription, setPerkDescription] = useState(application.property_manager_perk_description ?? "");
+  const [perkType, setPerkType] = useState(application.property_manager_perk_type ?? "custom");
+  const [perkTerms, setPerkTerms] = useState(application.property_manager_perk_terms ?? "");
   const formRef = useRef<HTMLFormElement>(null);
 
   function updateProgress() {
@@ -79,7 +92,7 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
   return <form ref={formRef} action={action} encType="multipart/form-data" onInput={updateProgress} onChange={updateProgress} className="space-y-5">
     <div className="sticky top-0 z-20 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.12em] text-slate-500">Profile completion</p><p aria-live="polite" className="mt-1 text-sm font-bold">{progress}% of required fields completed</p></div>{application.last_saved_at ? <p className="hidden text-xs text-slate-400 sm:block">Last saved {new Date(application.last_saved_at).toLocaleString()}</p> : null}</div><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500 transition-[width]" style={{ width: `${progress}%` }} /></div></div>
 
-    <Section id="business" number="Section 1 of 5" title="Business information" description="The core contact and company details attached to the paid application." icon={Building2}>
+    <Section id="business" number="Section 1 of 6" title="Business information" description="The core contact and company details attached to the paid application." icon={Building2}>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Legal or public business name <span className="text-rose-600">*</span><input className={input} name="businessName" minLength={2} maxLength={160} defaultValue={application.business_name ?? customerName ?? ""} autoComplete="organization" /><FieldError state={state} name="businessName" /></label>
         <label className="text-sm font-semibold text-slate-700">Contact name <span className="text-rose-600">*</span><input className={input} name="contactName" minLength={2} maxLength={160} defaultValue={application.contact_name ?? ""} autoComplete="name" /><FieldError state={state} name="contactName" /></label>
@@ -91,9 +104,9 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
       </div>
     </Section>
 
-    <Section id="services" number="Section 2 of 5" title="Services and coverage" description="Help buyers understand what you do, where you work, and when you are available." icon={MapPin}>
+    <Section id="services" number="Section 2 of 6" title="Services and coverage" description="Help buyers understand what you do, where you work, and when you are available." icon={MapPin}>
       <div className="grid gap-5 sm:grid-cols-2">
-        <label className="text-sm font-semibold text-slate-700">Primary service category <span className="text-rose-600">*</span><select className={input} name="primaryServiceCategory" defaultValue={application.primary_service_category ?? ""}><option value="">Select a category</option>{FOUNDING_VERTICAL_CATALOG.map(category=><option key={category} value={category}>{category}</option>)}</select><FieldError state={state} name="primaryServiceCategory" /></label>
+        <label className="text-sm font-semibold text-slate-700">Primary service category <span className="text-rose-600">*</span><select className={input} name="primaryServiceCategory" value={category} onChange={event=>setCategory(event.target.value)}><option value="">Select a category</option>{FOUNDING_VERTICAL_CATALOG.map(item=><option key={item} value={item}>{item}</option>)}</select><FieldError state={state} name="primaryServiceCategory" /></label>
         <label className="text-sm font-semibold text-slate-700">Service radius <span className="text-rose-600">*</span><span className="relative block"><input className={`${input} pr-16`} name="serviceRadiusMiles" type="number" min="0" max="500" inputMode="numeric" defaultValue={application.service_radius_miles ?? ""} /><span className="pointer-events-none absolute right-3 top-5 text-xs text-slate-400">miles</span></span><FieldError state={state} name="serviceRadiusMiles" /></label>
         <div className="sm:col-span-2"><p className="text-sm font-semibold text-slate-700">Additional service categories <span className="font-normal text-slate-400">(optional)</span></p><div className="mt-2 grid max-h-64 gap-2 overflow-y-auto rounded-xl border border-slate-200 p-3 sm:grid-cols-2 lg:grid-cols-3">{FOUNDING_VERTICAL_CATALOG.map(category=><label key={category} className="flex items-start gap-2 rounded-lg p-2 text-xs leading-5 hover:bg-slate-50"><input type="checkbox" name="additionalServiceCategories" value={category} defaultChecked={application.additional_service_categories?.includes(category)} className="mt-0.5 size-4 shrink-0 accent-emerald-700" />{category}</label>)}</div><FieldError state={state} name="additionalServiceCategories" /></div>
         <label className="text-sm font-semibold text-slate-700">Services offered <span className="text-rose-600">*</span><textarea className={textarea} name="servicesOffered" defaultValue={application.services_offered?.join("\n") ?? ""} placeholder={"Water heater repair\nDrain cleaning\nFixture installation"} /><span className="mt-1.5 block text-xs font-normal text-slate-400">One service per line.</span><FieldError state={state} name="servicesOffered" /></label>
@@ -104,7 +117,7 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
       </div>
     </Section>
 
-    <Section id="verification" number="Section 3 of 5" title="Business verification" description="Licensing is requested only when it applies to your trade or jurisdiction." icon={FileCheck2}>
+    <Section id="verification" number="Section 3 of 6" title="Business verification" description="Licensing is requested only when it applies to your trade or jurisdiction." icon={FileCheck2}>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="flex gap-3 rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 sm:col-span-2"><input type="checkbox" name="licenseApplicable" checked={licenseApplicable} onChange={event=>setLicenseApplicable(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-emerald-700" /><span>A trade or professional license applies to this business<span className="mt-1 block text-xs font-normal text-slate-400">Leave unchecked for categories or locations where no license applies.</span></span></label>
         {licenseApplicable ? <label className="text-sm font-semibold text-slate-700">License number <span className="text-rose-600">*</span><input className={input} name="licenseNumber" maxLength={120} defaultValue={application.license_number ?? ""} /><FieldError state={state} name="licenseNumber" /></label> : <input type="hidden" name="licenseNumber" value="" />}
@@ -116,7 +129,7 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
       </div>
     </Section>
 
-    <Section id="marketplace" number="Section 4 of 5" title="Marketplace profile" description="This content becomes public only after approval and according to your display consent." icon={Camera}>
+    <Section id="marketplace" number="Section 4 of 6" title="Marketplace profile" description="This content becomes public only after approval and according to your display consent." icon={Camera}>
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Short headline <span className="text-rose-600">*</span><input className={input} name="profileHeadline" minLength={5} maxLength={120} defaultValue={application.profile_headline ?? ""} placeholder="Reliable HVAC service for North Dallas homes and businesses" /><FieldError state={state} name="profileHeadline" /></label>
         <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Detailed company bio <span className="text-rose-600">*</span><textarea className={`${textarea} min-h-40`} name="companyBio" minLength={40} maxLength={4000} defaultValue={application.company_bio ?? ""} placeholder="Tell potential customers what sets your team apart, the work you specialize in, and how you approach service." /><FieldError state={state} name="companyBio" /></label>
@@ -128,7 +141,22 @@ export function FoundingPartnerOnboardingForm({ application, customerEmail, cust
       </div>
     </Section>
 
-    <Section id="consent" number="Section 5 of 5" title="Review and consent" description="Drafts can be saved without these confirmations. All three are required for final submission." icon={ShieldCheck}>
+    <Section id="property-manager-perk" number="Section 5 of 6" title="Property Manager Perk" description="Feature one clear offer or service promise for property managers. You can change or disable it later from your vendor dashboard." icon={Gift}>
+      <div className="space-y-5">
+        <label className="flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-950"><input type="checkbox" name="propertyManagerPerkEnabled" checked={perkEnabled} onChange={event=>setPerkEnabled(event.target.checked)} className="mt-0.5 size-4 shrink-0 accent-emerald-700" /><span>Display this offer after my listing is approved<span className="mt-1 block text-xs font-normal text-emerald-800/70">Available to eligible paid memberships. Empty or expired offers are never displayed.</span></span></label>
+        <div><p className="text-sm font-semibold text-slate-700">Suggestions for {category || "your category"}</p><div className="mt-2 flex flex-wrap gap-2">{propertyManagerPerkSuggestions(category).map(suggestion=><button key={suggestion.title} type="button" onClick={()=>{setPerkTitle(suggestion.title);setPerkType(suggestion.type);setPerkEnabled(true);}} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:border-emerald-400 hover:bg-emerald-50">{suggestion.title}</button>)}</div></div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="text-sm font-semibold text-slate-700">Perk title<input className={input} name="propertyManagerPerkTitle" value={perkTitle} onChange={event=>setPerkTitle(event.target.value)} minLength={perkEnabled ? 3 : undefined} maxLength={80} placeholder="Priority 24–48-hour scheduling" /><FieldError state={state} name="propertyManagerPerk.title" /></label>
+          <label className="text-sm font-semibold text-slate-700">Perk category<select className={input} name="propertyManagerPerkType" value={perkType} onChange={event=>setPerkType(event.target.value)}>{PROPERTY_MANAGER_PERK_TYPES.map(type=><option key={type} value={type}>{type.replaceAll("_", " ").replace(/\b\w/g, letter=>letter.toUpperCase())}</option>)}</select></label>
+          <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Description<textarea className={textarea} name="propertyManagerPerkDescription" value={perkDescription} onChange={event=>setPerkDescription(event.target.value)} minLength={perkEnabled ? 10 : undefined} maxLength={280} placeholder="Explain exactly what property managers receive and when it applies." /><FieldError state={state} name="propertyManagerPerk.description" /></label>
+          <label className="text-sm font-semibold text-slate-700">Terms <span className="font-normal text-slate-400">(optional)</span><textarea className={textarea} name="propertyManagerPerkTerms" maxLength={500} value={perkTerms} onChange={event=>setPerkTerms(event.target.value)} placeholder="For example: Valid for new service requests; parts excluded." /></label>
+          <label className="text-sm font-semibold text-slate-700">Expiration date <span className="font-normal text-slate-400">(optional)</span><input className={input} name="propertyManagerPerkExpirationDate" type="date" defaultValue={application.property_manager_perk_expiration_date ?? ""} /></label>
+        </div>
+        <div aria-label="Property Manager Perk preview" className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><p className="text-[10px] font-black uppercase tracking-[.14em] text-amber-700">Property Manager Perk · Preview</p><h3 className="mt-2 text-lg font-bold text-amber-950">{perkTitle || "Your offer title"}</h3><p className="mt-2 whitespace-pre-line text-sm leading-6 text-amber-900/75">{perkDescription || "Your clear offer description will appear here."}</p>{perkTerms ? <p className="mt-3 border-t border-amber-200 pt-3 text-xs text-amber-900/65"><strong>Terms:</strong> {perkTerms}</p> : null}</div>
+      </div>
+    </Section>
+
+    <Section id="consent" number="Section 6 of 6" title="Review and consent" description="Drafts can be saved without these confirmations. All three are required for final submission." icon={ShieldCheck}>
       <div className="space-y-3">
         <label className="flex gap-3 rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700"><input type="checkbox" name="accuracyConfirmed" defaultChecked={application.accuracy_confirmed} className="mt-1 size-4 shrink-0 accent-emerald-700" /><span>I confirm that the submitted information is accurate and that I am authorized to represent this business. <span className="text-rose-600">*</span><FieldError state={state} name="accuracyConfirmed" /></span></label>
         <label className="flex gap-3 rounded-xl border border-slate-200 p-4 text-sm leading-6 text-slate-700"><input type="checkbox" name="publicDisplayConsent" defaultChecked={application.public_display_consent} className="mt-1 size-4 shrink-0 accent-emerald-700" /><span>I give Optimize Local Connect permission to display approved profile information publicly in the marketplace. <span className="text-rose-600">*</span><FieldError state={state} name="publicDisplayConsent" /></span></label>

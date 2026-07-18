@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { foundingPartnerDraftSchema, foundingPartnerSubmissionSchema, onboardingDraftFromFormData } from "@/src/domain/founding-partner/onboarding";
-import { getAppOrigin } from "@/src/lib/auth/origin";
+import { FOUNDING_PARTNER_PLAN } from "@/src/domain/vendor-memberships/catalog";
+import { getCurrentUser } from "@/src/lib/auth/session";
 import { resolveFoundingPartnerOnboardingAccess } from "@/src/lib/founding-partner/onboarding-access";
-import { createFoundingPartnerStripeCheckout } from "@/src/lib/founding-fifty/stripe";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 function safeLog(label: string, error: unknown, context: Record<string, string> = {}) {
@@ -15,43 +15,9 @@ function safeLog(label: string, error: unknown, context: Record<string, string> 
 }
 
 export async function startFoundingPartnerCheckout() {
-  const attemptId = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 31 * 60 * 1000);
-  const admin = createSupabaseAdminClient();
-  let checkoutUrl: string | null = null;
-  let failure = "unavailable";
-
-  try {
-    const { error: reservationError } = await admin.rpc("reserve_founding_partner_checkout", {
-      target_attempt_id: attemptId,
-      target_expires_at: expiresAt.toISOString(),
-    });
-    if (reservationError) {
-      failure = reservationError.message.includes("capacity reached") ? "sold_out" : "unavailable";
-      throw reservationError;
-    }
-
-    const origin = await getAppOrigin();
-    const checkout = await createFoundingPartnerStripeCheckout({
-      attemptId,
-      expiresAt,
-      successUrl: `${origin}/founders/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${origin}/founders?checkout=cancelled`,
-    });
-    const { error: attachError } = await admin.rpc("attach_founding_partner_checkout", {
-      target_attempt_id: attemptId,
-      target_checkout_session_id: checkout.id,
-      target_expires_at: checkout.expiresAt,
-    });
-    if (attachError) throw attachError;
-    checkoutUrl = checkout.url;
-  } catch (error) {
-    safeLog("founding_partner_checkout_create_failed", error, { attemptId });
-    await admin.rpc("fail_founding_partner_checkout", { target_attempt_id: attemptId, target_failure_code: "checkout_create_failed" });
-  }
-
-  if (!checkoutUrl) redirect(`/founders?checkout=${failure}`);
-  redirect(checkoutUrl);
+  const next = `/onboarding?plan=${FOUNDING_PARTNER_PLAN.key}`;
+  if (await getCurrentUser()) redirect(next);
+  redirect(`/sign-in?next=${encodeURIComponent(next)}`);
 }
 
 export type OnboardingState = { status: "idle" | "error" | "success"; message?: string; fieldErrors?: Record<string, string> };
@@ -137,6 +103,21 @@ export async function saveFoundingPartnerOnboarding(_state: OnboardingState, for
     public_display_consent: parsed.data.publicDisplayConsent,
     terms_privacy_accepted: parsed.data.termsPrivacyAccepted,
   };
+  const { error: perkError } = await admin.rpc("save_founding_partner_perk", {
+    target_onboarding_id: access.onboardingId,
+    target_payload: {
+      enabled: parsed.data.propertyManagerPerk.enabled,
+      title: parsed.data.propertyManagerPerk.title,
+      description: parsed.data.propertyManagerPerk.description,
+      type: parsed.data.propertyManagerPerk.type,
+      terms: parsed.data.propertyManagerPerk.terms,
+      expiration_date: parsed.data.propertyManagerPerk.expirationDate || null,
+    },
+  });
+  if (perkError) {
+    safeLog("founding_partner_perk_save_failed", perkError, { onboardingId: access.onboardingId });
+    return { status: "error", message: "We could not save the Property Manager Perk. Review it and try again." };
+  }
   const { error } = await admin.rpc("save_founding_partner_onboarding", {
     target_onboarding_id: access.onboardingId,
     target_payload: payload,

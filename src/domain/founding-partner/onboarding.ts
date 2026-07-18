@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FOUNDING_VERTICAL_CATALOG } from "@/src/domain/founding-fifty/catalog";
+import { propertyManagerPerkSchema, type PropertyManagerPerkType } from "@/src/domain/vendor-memberships/property-manager-perk";
 
 const urlOrEmpty = z.union([z.literal(""), z.string().trim().url("Enter a complete URL, including https://.")]);
 const integerOrEmpty = (maximum: number) => z.union([z.literal(""), z.coerce.number().int().min(0).max(maximum)]);
@@ -37,6 +38,7 @@ export const foundingPartnerDraftSchema = z.object({
   offersFreeEstimates: z.boolean(),
   offersFinancing: z.boolean(),
   languagesSpoken: z.array(z.string().trim().min(1).max(80)).max(30),
+  propertyManagerPerk: propertyManagerPerkSchema.default({ enabled: false, title: "", description: "", type: "custom", terms: "", expirationDate: "" }),
   accuracyConfirmed: z.boolean(),
   publicDisplayConsent: z.boolean(),
   termsPrivacyAccepted: z.boolean(),
@@ -106,6 +108,14 @@ export function onboardingDraftFromFormData(formData: FormData): FoundingPartner
     offersFreeEstimates: formData.get("offersFreeEstimates") === "on",
     offersFinancing: formData.get("offersFinancing") === "on",
     languagesSpoken: splitList(formData.get("languagesSpoken")),
+    propertyManagerPerk: {
+      enabled: formData.get("propertyManagerPerkEnabled") === "on",
+      title: formData.get("propertyManagerPerkTitle")?.toString() ?? "",
+      description: formData.get("propertyManagerPerkDescription")?.toString() ?? "",
+      type: (formData.get("propertyManagerPerkType")?.toString() ?? "custom") as PropertyManagerPerkType,
+      terms: formData.get("propertyManagerPerkTerms")?.toString() ?? "",
+      expirationDate: formData.get("propertyManagerPerkExpirationDate")?.toString() ?? "",
+    },
     accuracyConfirmed: formData.get("accuracyConfirmed") === "on",
     publicDisplayConsent: formData.get("publicDisplayConsent") === "on",
     termsPrivacyAccepted: formData.get("termsPrivacyAccepted") === "on",
