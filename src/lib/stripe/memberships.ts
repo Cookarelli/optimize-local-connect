@@ -8,7 +8,7 @@ import { getStripeClient } from "@/src/lib/stripe/client";
 import { evaluateOrganizationActivation } from "@/src/lib/vendor-memberships/lifecycle";
 
 const uuid=z.string().uuid();
-export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId:string;customerId:string;onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
+export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId?:string;guestClaimId?:string;customerId:string;onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
   const plan=getVendorPlan(input.planKey); if(!plan) throw new Error("Unknown vendor membership plan.");
   const priceId=getVendorPlanPriceId(plan); const productId=getVendorPlanProductId(plan); const stripeClient=getStripeClient();
   const price=await stripeClient.prices.retrieve(priceId);
@@ -16,7 +16,8 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
   if(!price.active||price.type!=="recurring"||attachedProductId!==productId||price.unit_amount!==plan.amountCents||price.currency.toUpperCase()!==plan.currency||price.recurring?.interval!==plan.interval) throw new Error(`${plan.stripePriceEnv} does not match the configured Product, plan price, and interval.`);
   const metadata={
     organization_id:input.organizationId,
-    user_id:input.userId,
+    ...(input.userId ? { user_id:input.userId } : {}),
+    ...(input.guestClaimId ? { guest_claim_id:input.guestClaimId } : {}),
     membership_record_id:input.membershipId,
     membership_tier:plan.key,
     onboarding_version:String(input.onboardingVersion),
@@ -73,6 +74,11 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
   if(subscription.items.data.length!==1||item?.quantity!==1||priceId!==expectedPrice||amount!==plan.amountCents||interval!==plan.interval||subscription.currency.toUpperCase()!==plan.currency) throw new Error("Stripe subscription does not match the configured vendor plan.");
   const {error}=await admin.rpc("process_vendor_membership_stripe_event",{target_event_id:event.id,target_event_type:event.type,target_membership_id:membershipId.data,target_vendor_organization_id:organizationId.data,target_level_code:plan.code,target_subscription_id:subscription.id,target_customer_id:customerId,target_price_id:priceId,target_status:membershipStatusFromStripe(event.type,subscription.status),target_period_end:subscriptionPeriodEnd(subscription)?new Date(subscriptionPeriodEnd(subscription)!*1000).toISOString():null,target_cancel_at_period_end:subscription.cancel_at_period_end,target_amount_cents:amount,target_currency:subscription.currency.toUpperCase(),target_payload:payload});
   if(error) throw error;
+  const stripeCustomer=await stripeClient.customers.retrieve(customerId);
+  if(!("deleted" in stripeCustomer && stripeCustomer.deleted) && stripeCustomer.email) {
+    const { error: claimError } = await admin.rpc("record_guest_founding_vendor_payment", { target_membership_id: membershipId.data, target_customer_id: customerId, target_customer_email: stripeCustomer.email });
+    if (claimError) throw claimError;
+  }
   await evaluateOrganizationActivation(organizationId.data);
   return true;
 }

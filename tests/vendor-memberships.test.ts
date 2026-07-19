@@ -11,11 +11,13 @@ const reconciliationMigration = readFileSync(new URL("../supabase/migrations/202
 const membershipStripe = readFileSync(new URL("../src/lib/stripe/memberships.ts", import.meta.url), "utf8");
 const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
 const foundersPage = readFileSync(new URL("../app/founders/page.tsx", import.meta.url), "utf8");
-const foundersCheckoutButton = readFileSync(new URL("../src/components/founding-partner/checkout-submit-button.tsx", import.meta.url), "utf8");
 const foundersAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
 const homepage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const pricingPage = readFileSync(new URL("../app/pricing/page.tsx", import.meta.url), "utf8");
 const legacyFoundingPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
+const guestClaimMigration = readFileSync(new URL("../supabase/migrations/202607190025_guest_founding_vendor_checkout.sql", import.meta.url), "utf8");
+const guestClaimPage = readFileSync(new URL("../app/membership/claim/page.tsx", import.meta.url), "utf8");
+const guestClaimStatus = readFileSync(new URL("../app/api/membership/claim-status/route.ts", import.meta.url), "utf8");
 
 test("vendor membership catalog exposes only the three paid launch plans", () => {
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.key), ["founding_partner","network","preferred"]);
@@ -148,13 +150,18 @@ test("Founding Partner sales page states the annual recurring offer and its limi
   assert.match(foundersPage, /Applications may be reviewed/i);
 });
 
-test("Founding Partner CTAs enter the authenticated annual membership workflow", () => {
-  assert.match(foundersPage, /startFoundingPartnerCheckout/);
-  assert.match(foundersPage, /<form action=\{startFoundingPartnerCheckout\}>/);
-  assert.match(foundersAction, /\/onboarding\?plan=/);
-  assert.match(foundersAction, /FOUNDING_PARTNER_PLAN\.key/);
-  assert.doesNotMatch(foundersAction, /createFoundingPartnerStripeCheckout/);
-  assert.match(foundersCheckoutButton, /Become a Founding Partner/);
+test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled annual Price", () => {
+  assert.match(foundersPage, /GuestFoundingCheckoutForm/);
+  assert.match(foundersAction, /create_guest_founding_vendor_checkout/);
+  assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
+  assert.match(foundersAction, /membership\/claim\?session_id=\{CHECKOUT_SESSION_ID\}/);
+  assert.match(foundersAction, /cancelUrl: `\$\{origin\}\/founders\?checkout=cancelled`/);
+  assert.match(guestClaimMigration, /vendor_membership_guest_claims/);
+  assert.match(guestClaimMigration, /record_guest_founding_vendor_payment/);
+  assert.match(guestClaimMigration, /claim\.purchaser_email<>lower\(trim\(target_user_email\)\)/);
+  assert.match(membershipStripe, /record_guest_founding_vendor_payment/);
+  assert.match(guestClaimPage, /same email address entered at checkout/i);
+  assert.match(guestClaimStatus, /Cache-Control.*no-store/);
   assert.match(foundersPage, /Secure checkout through Stripe/);
   assert.doesNotMatch(foundersPage, /fake success|payment=success/);
 });

@@ -21,9 +21,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { Logo } from "@/src/components/brand/logo";
-import { CheckoutSubmitButton } from "@/src/components/founding-partner/checkout-submit-button";
+import { GuestFoundingCheckoutForm } from "@/src/components/founding-partner/guest-checkout-form";
 import { FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice } from "@/src/domain/vendor-memberships/catalog";
-import { startFoundingPartnerCheckout } from "./actions";
 
 const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
@@ -65,7 +64,7 @@ const audiences = [
 ];
 
 const steps = [
-  ["01", "Join", `Choose the Founding Partner plan, sign in, and complete Stripe's hosted subscription checkout. The first ${founderPrice} charge is collected immediately.`],
+  ["01", "Join", `Enter your business details and complete Stripe's hosted subscription checkout. The first ${founderPrice} charge is collected immediately.`],
   ["02", "Submit business details", "Tell us who you serve, what work you perform, and where your team operates."],
   ["03", "Profile reviewed", "We review business information and may request credentials before the listing is published."],
   ["04", "Listing activated", "Approved profiles become available in the marketplace with their Founding Partner recognition."],
@@ -79,14 +78,6 @@ const faqs = [
   ["When will the marketplace be fully available?", "Optimize Local Connect is being introduced in stages. Founding Partners are joining during the early marketplace period, before every planned buyer, market, and tool is available."],
   ["What information is needed?", "Stripe first collects your email and business name. After verified payment, you will add a contact name, phone, website if available, service category, city, and a short business description for review."],
 ] as const;
-
-function CheckoutForm({ light = false, compact = false }: { light?: boolean; compact?: boolean }) {
-  return (
-    <form action={startFoundingPartnerCheckout}>
-      <CheckoutSubmitButton light={light} compact={compact} />
-    </form>
-  );
-}
 
 export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string }> }) {
   const { checkout, onboarding } = await searchParams;
@@ -111,7 +102,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <nav aria-label="Founding Partner page" className="flex items-center gap-1 sm:gap-3">
             <a href="#details" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white lg:inline-flex">What you receive</a>
             <a href="#faq" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white sm:inline-flex">FAQ</a>
-            <CheckoutForm compact />
+            <a href="#checkout" className="inline-flex min-h-11 items-center rounded-full bg-emerald-700 px-4 text-sm font-bold text-white hover:bg-emerald-800">Join now</a>
           </nav>
         </div>
       </header>
@@ -132,10 +123,8 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
               Join Optimize Local Connect early and give your service business preferred visibility with property managers, real estate professionals, landlords, homeowners, and other local buyers.
             </p>
-            <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-              <CheckoutForm />
-              <p className="flex items-center gap-2 text-sm font-semibold text-slate-300"><LockKeyhole aria-hidden="true" className="size-4 text-emerald-400" />Secure checkout through Stripe</p>
-            </div>
+            <div id="checkout" className="mt-9 max-w-xl scroll-mt-24"><GuestFoundingCheckoutForm /></div>
+            <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-300"><LockKeyhole aria-hidden="true" className="size-4 text-emerald-400" />Secure checkout through Stripe</p>
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-400">Click to open Stripe’s hosted checkout. After Stripe verifies payment with our server, you will complete the business profile that goes to admin review.</p>
           </div>
 
@@ -233,7 +222,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <div aria-hidden="true" className="absolute -right-28 -top-28 size-80 rounded-full border-[52px] border-white/[.06]" />
           <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Partner</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">Make your local business easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">{founderPrice}. Charged immediately and automatically renews every 12 months until canceled. Limited availability; no guaranteed leads.</p><p className="mt-3 max-w-2xl text-xs leading-5 text-emerald-200">{FOUNDING_PARTNER_RENEWAL_DISCLOSURE}</p></div>
-            <div className="flex flex-col items-start gap-3 lg:items-stretch"><CheckoutForm light /><Link href="/founding-fifty" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">Review category availability</Link></div>
+            <div className="flex flex-col items-start gap-3 lg:items-stretch"><a href="#checkout" className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-emerald-800 hover:bg-emerald-50">Join now</a><Link href="/founding-fifty" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">Review category availability</Link></div>
           </div>
         </div>
       </section>

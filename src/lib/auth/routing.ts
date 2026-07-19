@@ -8,7 +8,8 @@ export function safeInternalPath(value: string | null | undefined, fallback = AU
 }
 
 export function isVendorEnrollmentPath(value: string) {
-  return /^\/onboarding\?plan=(founding_partner|network|preferred|founding_vendor|network_member|preferred_vendor)(?:&|$)/.test(value);
+  return /^\/onboarding\?plan=(founding_partner|network|preferred|founding_vendor|network_member|preferred_vendor)(?:&|$)/.test(value)
+    || /^\/membership\/claim\?session_id=cs_[A-Za-z0-9_]+(?:&|$)/.test(value);
 }
 
 export function getRoleHome(user: AppUser): string {
