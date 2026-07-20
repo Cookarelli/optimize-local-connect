@@ -79,7 +79,16 @@ test("Stripe lifecycle events map to safe membership statuses",()=>{
 
 test("Stripe memberships verify configured Prices and process the required signed events",()=>{
   for(const event of ["checkout.session.completed","customer.subscription.created","customer.subscription.updated","customer.subscription.deleted","invoice.paid","invoice.payment_failed"]) assert.match(membershipStripe,new RegExp(event.replaceAll(".","\\.")));
-  assert.match(membershipStripe,/attachedProductId!==productId/);assert.match(membershipStripe,/price\.unit_amount!==plan\.amountCents/);assert.match(membershipStripe,/price\.recurring\?\.interval!==plan\.interval/);assert.match(webhook,/constructStripeWebhookEvent/);assert.match(webhook,/processVendorMembershipStripeEvent/);
+  assert.match(membershipStripe,/stripe_vendor_membership_price_validation_failed/);
+  assert.match(membershipStripe,/expected,actual,failedComparisons/);
+  assert.match(membershipStripe,/productId:attachedProductId/);
+  assert.match(membershipStripe,/priceId:price\.id/);
+  assert.match(membershipStripe,/amount:price\.unit_amount/);
+  assert.match(membershipStripe,/recurring:price\.type==="recurring"/);
+  assert.match(membershipStripe,/intervalCount:price\.recurring\?\.interval_count/);
+  assert.match(membershipStripe,/livemode:price\.livemode/);
+  assert.match(membershipStripe,/Stripe membership Price validation failed/);
+  assert.match(webhook,/constructStripeWebhookEvent/);assert.match(webhook,/processVendorMembershipStripeEvent/);
   assert.match(membershipStripe,/mode:plan\.checkoutMode/);
   assert.match(membershipStripe,/membershipStatusFromStripe\(event\.type,subscription\.status\)/);
 });

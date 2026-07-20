@@ -13,7 +13,33 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
   const priceId=getVendorPlanPriceId(plan); const productId=getVendorPlanProductId(plan); const stripeClient=getStripeClient();
   const price=await stripeClient.prices.retrieve(priceId);
   const attachedProductId=typeof price.product==="string"?price.product:price.product.id;
-  if(!price.active||price.type!=="recurring"||attachedProductId!==productId||price.unit_amount!==plan.amountCents||price.currency.toUpperCase()!==plan.currency||price.recurring?.interval!==plan.interval) throw new Error(`${plan.stripePriceEnv} does not match the configured Product, plan price, and interval.`);
+  const expected={
+    productId,
+    priceId,
+    amount:plan.amountCents,
+    currency:plan.currency,
+    recurring:true,
+    interval:plan.interval,
+    intervalCount:1,
+    active:true,
+    livemode:process.env.NODE_ENV==="production",
+  };
+  const actual={
+    productId:attachedProductId,
+    priceId:price.id,
+    amount:price.unit_amount,
+    currency:price.currency.toUpperCase(),
+    recurring:price.type==="recurring"&&price.recurring!==null,
+    interval:price.recurring?.interval??null,
+    intervalCount:price.recurring?.interval_count??null,
+    active:price.active,
+    livemode:price.livemode,
+  };
+  const failedComparisons=Object.entries(expected).flatMap(([field,value])=>actual[field as keyof typeof actual]===value?[]:[field]);
+  if(failedComparisons.length){
+    console.error("stripe_vendor_membership_price_validation_failed",{planKey:plan.key,expected,actual,failedComparisons});
+    throw new Error(`Stripe membership Price validation failed for ${plan.key}: ${failedComparisons.join(", ")}.`);
+  }
   const metadata={
     organization_id:input.organizationId,
     ...(input.userId ? { user_id:input.userId } : {}),
