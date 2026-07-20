@@ -6,7 +6,6 @@ import { z } from "zod";
 import { foundingPartnerDraftSchema, foundingPartnerSubmissionSchema, onboardingDraftFromFormData } from "@/src/domain/founding-partner/onboarding";
 import { FOUNDING_PARTNER_PLAN } from "@/src/domain/vendor-memberships/catalog";
 import { getAppOrigin } from "@/src/lib/auth/origin";
-import { getCurrentUser } from "@/src/lib/auth/session";
 import { resolveFoundingPartnerOnboardingAccess } from "@/src/lib/founding-partner/onboarding-access";
 import { createVendorMembershipCheckout } from "@/src/lib/stripe/memberships";
 import { getStripeClient } from "@/src/lib/stripe/client";
@@ -15,12 +14,6 @@ import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 function safeLog(label: string, error: unknown, context: Record<string, string> = {}) {
   const errorType = error instanceof Error ? error.name : "UnknownError";
   console.error(label, { ...context, errorType });
-}
-
-export async function startFoundingPartnerCheckout() {
-  const next = `/onboarding?plan=${FOUNDING_PARTNER_PLAN.key}`;
-  if (await getCurrentUser()) redirect(next);
-  redirect(`/sign-in?next=${encodeURIComponent(next)}`);
 }
 
 const guestFoundingCheckoutSchema = z.object({

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL) : undefined,
   title: { default: PLATFORM_BRAND.productName, template: `%s | ${PLATFORM_BRAND.shortName}` },
   description: "Optimize Local Connect is the flagship AI-powered community platform for trusted local decisions, launching first with property management.",
   keywords: ["Optimize Local Connect", "local business marketplace", "property management platform", "trusted local vendors", "community impact"],
