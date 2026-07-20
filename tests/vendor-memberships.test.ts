@@ -16,6 +16,7 @@ const homepage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8
 const pricingPage = readFileSync(new URL("../app/pricing/page.tsx", import.meta.url), "utf8");
 const legacyFoundingPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
 const guestClaimMigration = readFileSync(new URL("../supabase/migrations/202607190025_guest_founding_vendor_checkout.sql", import.meta.url), "utf8");
+const guestCheckoutSourceMigration = readFileSync(new URL("../supabase/migrations/202607190026_allow_guest_founding_checkout_membership_source.sql", import.meta.url), "utf8");
 const guestClaimPage = readFileSync(new URL("../app/membership/claim/page.tsx", import.meta.url), "utf8");
 const guestClaimStatus = readFileSync(new URL("../app/api/membership/claim-status/route.ts", import.meta.url), "utf8");
 
@@ -164,6 +165,15 @@ test("Founding Partner guest checkout reserves a webhook-backed claim using the 
   assert.match(guestClaimStatus, /Cache-Control.*no-store/);
   assert.match(foundersPage, /Secure checkout through Stripe/);
   assert.doesNotMatch(foundersPage, /fake success|payment=success/);
+});
+
+test("guest Founding Vendor checkout has an explicit, auditable membership source", () => {
+  assert.match(guestClaimMigration, /'guest_founding_checkout'/);
+  assert.match(guestCheckoutSourceMigration, /drop constraint if exists vendor_memberships_source_check/);
+  assert.match(guestCheckoutSourceMigration, /add constraint vendor_memberships_source_check/);
+  for (const source of ["self_service", "admin", "founding_program", "migration", "billing_webhook", "guest_founding_checkout"]) {
+    assert.match(guestCheckoutSourceMigration, new RegExp(`'${source}'`));
+  }
 });
 
 test("no active public offer page describes Founding Partner as one-time", () => {
