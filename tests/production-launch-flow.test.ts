@@ -29,15 +29,43 @@ test("Founding Vendor enrollment is public and server-controlled", () => {
   assert.match(pricingPage, /founding\?"\/founders"/);
 });
 
-test("guest checkout failures retain safe production diagnostics without changing the customer message", () => {
+test("guest checkout validation failures log Zod issue categories without customer values", () => {
+  assert.match(foundersAction, /guest_founding_checkout_validation_failed/);
+  assert.match(foundersAction, /stage: "validating_form"/);
+  assert.match(foundersAction, /issueCodes: parsed\.error\.issues/);
+  assert.match(foundersAction, /issuePaths: parsed\.error\.issues/);
+});
+
+test("guest checkout pending membership failures identify the database stage", () => {
+  assert.match(foundersAction, /stage = "pending_membership_creation"/);
+  assert.match(foundersAction, /asCheckoutError\(stage, reservationError\)/);
+  assert.match(foundersAction, /failedStage: stage/);
+});
+
+test("guest checkout product and price configuration failures identify their stage", () => {
+  assert.match(foundersAction, /stage = "validating_price_product"/);
+  assert.match(foundersAction, /getVendorPlanProductId\(FOUNDING_PARTNER_PLAN\)/);
+  assert.match(foundersAction, /getVendorPlanPriceId\(FOUNDING_PARTNER_PLAN\)/);
+});
+
+test("guest checkout payload construction is a named pre-session stage", () => {
+  assert.match(foundersAction, /stage = "constructing_checkout_session_payload"/);
+  assert.match(foundersAction, /const checkoutPayload =/);
+  assert.match(foundersAction, /createVendorMembershipCheckout\(checkoutPayload\)/);
+});
+
+test("guest checkout failures retain safe diagnostics for thrown objects and preserve the customer message", () => {
   assert.match(foundersAction, /guest_founding_checkout_failed/);
-  assert.match(foundersAction, /errorName: exception\.name/);
-  assert.match(foundersAction, /errorMessage: redactErrorText\(exception\.message\)/);
-  assert.match(foundersAction, /errorStack: redactErrorText\(exception\.stack/);
+  assert.match(foundersAction, /errorName: name/);
+  assert.match(foundersAction, /unknownErrorDetails/);
+  assert.match(foundersAction, /failedStage: stage/);
   assert.match(foundersAction, /environmentPresent:/);
   assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
   assert.match(foundersAction, /stripeCheckoutSessionCreationAttempted/);
   assert.match(foundersAction, /failureTiming: stripeApiCallAttempted \? "after_stripe_api_call" : "before_stripe_api_call"/);
+  assert.match(foundersAction, /"loading_configuration"/);
+  assert.match(foundersAction, /"database_lookup"/);
+  assert.match(foundersAction, /asCheckoutError\(stage, attachError\)/);
   assert.match(foundersAction, /Secure checkout is temporarily unavailable\. Please try again shortly\./);
 });
 
