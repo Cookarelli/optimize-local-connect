@@ -57,6 +57,9 @@ export default defineConfig(async () => {
   }
 
   return {
+    optimizeDeps: {
+      exclude: ["lucide-react"],
+    },
     resolve: isVercelBuild
       ? { alias: { tailwindcss: resolve(process.cwd(), "node_modules/tailwindcss/index.css") } }
       : undefined,
