@@ -20,6 +20,7 @@ export async function startVendorMembershipCheckout(formData: FormData) {
   const key = normalizeVendorPlanKey(z.string().safeParse(formData.get("plan")).data ?? "");
   if (!key) redirect("/vendor/membership?error=invalid_plan");
   const plan = getVendorPlan(key)!;
+  if (plan.key === "founding_partner") redirect("/founders");
   const priceId = getVendorPlanPriceId(plan);
   const admin = createSupabaseAdminClient();
   const { data: existing, error: lookupError } = await admin.from("vendor_memberships")

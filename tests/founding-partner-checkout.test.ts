@@ -78,12 +78,12 @@ test("success page reads verified database state instead of trusting the session
   assert.doesNotMatch(successPage, /retrieveAndVerifyFoundingPartnerCheckout|payment=success/);
 });
 
-test("public Founder checkout is a guest recurring membership flow", () => {
+test("public Founder checkout is a guest one-time membership flow", () => {
   assert.doesNotMatch(checkoutAction, /createFoundingPartnerStripeCheckout|reserve_founding_partner_checkout/);
   assert.match(checkoutAction, /FOUNDING_PARTNER_PLAN\.key/);
   assert.match(checkoutAction, /startGuestFoundingPartnerCheckout/);
   assert.doesNotMatch(checkoutAction, /getCurrentUser|\/sign-in\?next=/);
-  assert.match(foundersPage, /subscription checkout/i);
+  assert.match(foundersPage, /one-time payment checkout/i);
   assert.match(successPage, /lookupFailed/);
   assert.match(successPage, /Your payment status was not changed/);
 });

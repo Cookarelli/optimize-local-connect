@@ -57,7 +57,7 @@ export async function continueVendorMembershipCheckout(input: {
     try {
       const existing = await stripeClient.checkout.sessions.retrieve(prepared.checkout_session_id);
       const metadataMembershipId = existing.metadata?.membership_record_id ?? existing.metadata?.vendor_membership_id;
-      if (metadataMembershipId !== prepared.membership_id || existing.mode !== "subscription") throw new VendorCheckoutError("checkout_unavailable");
+      if (metadataMembershipId !== prepared.membership_id || existing.mode !== plan.checkoutMode) throw new VendorCheckoutError("checkout_unavailable");
       if (existing.status === "open" && existing.url) return existing.url;
       if (existing.status !== "expired") throw new VendorCheckoutError("checkout_unavailable");
       await admin.rpc("fail_vendor_membership_checkout", { target_membership_id: prepared.membership_id });

@@ -1,7 +1,7 @@
 import "server-only";
 import type Stripe from "stripe";
 import { z } from "zod";
-import { getVendorPlan, getVendorPlanPriceId, getVendorPlanProductId, VENDOR_MEMBERSHIP_PLANS } from "@/src/domain/vendor-memberships/catalog";
+import { FOUNDING_PARTNER_PLAN, getVendorPlan, getVendorPlanPriceId, getVendorPlanProductId, VENDOR_MEMBERSHIP_PLANS } from "@/src/domain/vendor-memberships/catalog";
 import { membershipStatusFromStripe } from "@/src/domain/vendor-memberships/status";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { getStripeClient } from "@/src/lib/stripe/client";
@@ -18,9 +18,9 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
     priceId,
     amount:plan.amountCents,
     currency:plan.currency,
-    recurring:true,
+    recurring:plan.checkoutMode==="subscription",
     interval:plan.interval,
-    intervalCount:1,
+    intervalCount:plan.checkoutMode==="subscription"?1:null,
     active:true,
     livemode:process.env.NODE_ENV==="production",
   };
@@ -52,7 +52,7 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
     vendor_organization_id:input.organizationId,
     vendor_plan_key:plan.key,
   };
-  const session=await stripeClient.checkout.sessions.create({mode:plan.checkoutMode,customer:input.customerId,line_items:[{price:priceId,quantity:1}],success_url:input.successUrl,cancel_url:input.cancelUrl,client_reference_id:input.membershipId,metadata,subscription_data:{metadata},billing_address_collection:"auto",allow_promotion_codes:false},{idempotencyKey:`vendor-membership-${input.membershipId}-attempt-${input.checkoutAttemptNumber}`});
+  const session=await stripeClient.checkout.sessions.create({mode:plan.checkoutMode,customer:input.customerId,line_items:[{price:priceId,quantity:1}],success_url:input.successUrl,cancel_url:input.cancelUrl,client_reference_id:input.membershipId,metadata,...(plan.checkoutMode==="subscription"?{subscription_data:{metadata}}:{}),billing_address_collection:"auto",allow_promotion_codes:false},{idempotencyKey:`vendor-membership-${input.membershipId}-attempt-${input.checkoutAttemptNumber}`});
   if(!session.url) throw new Error("Stripe Checkout did not return a hosted URL.");
   return {id:session.id,url:session.url};
 }
@@ -87,6 +87,7 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
   if(event.type==="checkout.session.completed"){
     const session=event.data.object as Stripe.Checkout.Session;
     if(!session.metadata?.membership_record_id&&!session.metadata?.vendor_membership_id) return false;
+    if(session.mode==="payment") return processOneTimeVendorMembershipCheckout(stripeClient,admin,event,payload,session);
     subscriptionId=typeof session.subscription==="string"?session.subscription:session.subscription?.id??null;
   }else if(event.type.startsWith("customer.subscription.")) subscriptionId=(event.data.object as Stripe.Subscription).id;
   else subscriptionId=subscriptionIdFromInvoice(event.data.object as Stripe.Invoice);
@@ -104,6 +105,30 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
   if(!("deleted" in stripeCustomer && stripeCustomer.deleted) && stripeCustomer.email) {
     const { error: claimError } = await admin.rpc("record_guest_founding_vendor_payment", { target_membership_id: membershipId.data, target_customer_id: customerId, target_customer_email: stripeCustomer.email });
     if (claimError) throw claimError;
+  }
+  await evaluateOrganizationActivation(organizationId.data);
+  return true;
+}
+
+async function processOneTimeVendorMembershipCheckout(stripeClient:ReturnType<typeof getStripeClient>,admin:ReturnType<typeof createSupabaseAdminClient>,event:Stripe.Event,payload:unknown,eventSession:Stripe.Checkout.Session){
+  const session=await stripeClient.checkout.sessions.retrieve(eventSession.id,{expand:["line_items.data.price"]});
+  const membershipId=uuid.safeParse(session.metadata?.membership_record_id??session.metadata?.vendor_membership_id);
+  const organizationId=uuid.safeParse(session.metadata?.organization_id??session.metadata?.vendor_organization_id);
+  const paymentIntentId=typeof session.payment_intent==="string"?session.payment_intent:session.payment_intent?.id??null;
+  const customerId=typeof session.customer==="string"?session.customer:session.customer?.id??null;
+  const lineItems=session.line_items?.data??[];
+  const price=lineItems.length===1&&typeof lineItems[0]?.price!=="string"?lineItems[0]?.price:null;
+  const plan=FOUNDING_PARTNER_PLAN;
+  const expectedPriceId=getVendorPlanPriceId(plan);
+  const expectedProductId=getVendorPlanProductId(plan);
+  const actualProductId=!price?null:typeof price.product==="string"?price.product:price.product.id;
+  if(!membershipId.success||!organizationId.success||session.mode!=="payment"||session.payment_status!=="paid"||!paymentIntentId?.startsWith("pi_")||!customerId?.startsWith("cus_")||!price||price.id!==expectedPriceId||actualProductId!==expectedProductId||price.active!==true||price.type!=="one_time"||price.unit_amount!==plan.amountCents||price.currency.toUpperCase()!==plan.currency||price.livemode!==(process.env.NODE_ENV==="production")) return false;
+  const {error}=await admin.rpc("process_one_time_vendor_membership_checkout",{target_event_id:event.id,target_event_type:event.type,target_membership_id:membershipId.data,target_vendor_organization_id:organizationId.data,target_checkout_session_id:session.id,target_payment_intent_id:paymentIntentId,target_customer_id:customerId,target_price_id:price.id,target_amount_cents:price.unit_amount,target_currency:price.currency.toUpperCase(),target_payload:payload});
+  if(error) throw error;
+  const stripeCustomer=await stripeClient.customers.retrieve(customerId);
+  if(!("deleted" in stripeCustomer&&stripeCustomer.deleted)&&stripeCustomer.email){
+    const {error:claimError}=await admin.rpc("record_guest_founding_vendor_payment",{target_membership_id:membershipId.data,target_customer_id:customerId,target_customer_email:stripeCustomer.email});
+    if(claimError) throw claimError;
   }
   await evaluateOrganizationActivation(organizationId.data);
   return true;

@@ -17,6 +17,7 @@ const pricingPage = readFileSync(new URL("../app/pricing/page.tsx", import.meta.
 const legacyFoundingPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
 const guestClaimMigration = readFileSync(new URL("../supabase/migrations/202607190025_guest_founding_vendor_checkout.sql", import.meta.url), "utf8");
 const guestCheckoutSourceMigration = readFileSync(new URL("../supabase/migrations/202607190026_allow_guest_founding_checkout_membership_source.sql", import.meta.url), "utf8");
+const oneTimeFoundingMigration = readFileSync(new URL("../supabase/migrations/202607190027_founding_partner_one_time_checkout.sql", import.meta.url), "utf8");
 const guestClaimPage = readFileSync(new URL("../app/membership/claim/page.tsx", import.meta.url), "utf8");
 const guestClaimStatus = readFileSync(new URL("../app/api/membership/claim-status/route.ts", import.meta.url), "utf8");
 
@@ -29,11 +30,11 @@ test("vendor membership catalog exposes only the three paid launch plans", () =>
   assert.equal(FOUNDING_PARTNER_PLAN.name, "Founding Partner");
   assert.equal(FOUNDING_PARTNER_PLAN.amountCents, 29900);
   assert.equal(FOUNDING_PARTNER_PLAN.currency, "USD");
-  assert.equal(FOUNDING_PARTNER_PLAN.interval, "year");
-  assert.equal(FOUNDING_PARTNER_PLAN.checkoutMode, "subscription");
+  assert.equal(FOUNDING_PARTNER_PLAN.interval, null);
+  assert.equal(FOUNDING_PARTNER_PLAN.checkoutMode, "payment");
   assert.equal(FOUNDING_PARTNER_PLAN.stripeProductEnv, "STRIPE_FOUNDING_PRODUCT_ID");
   assert.equal(FOUNDING_PARTNER_PLAN.stripePriceEnv, "STRIPE_FOUNDING_VENDOR_PRICE_ID");
-  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$299/year");
+  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$299");
 });
 
 test("every publicly purchasable paid tier requires a distinct Stripe Product and Price", () => {
@@ -113,12 +114,13 @@ test("Premium and Founding Partner receive Premium placement", () => {
   assert.equal(isPremiumMembership("verified"), false);
 });
 
-test("historical Founder seed is superseded by the canonical annual subscription migration", () => {
+test("Founding Partner is restored to the one-time membership model", () => {
   assert.match(migration, /'one_time',29900,50/);
-  assert.match(subscriptionMigration, /name='Founding Partner'/);
-  assert.match(subscriptionMigration, /annual_price_cents=29900/);
-  assert.match(subscriptionMigration, /billing_model='subscription'/);
-  assert.match(subscriptionMigration, /one_time_price_cents=null/);
+  assert.match(oneTimeFoundingMigration, /billing_model='one_time'/);
+  assert.match(oneTimeFoundingMigration, /one_time_price_cents=29900/);
+  assert.match(oneTimeFoundingMigration, /target_interval is not null/);
+  assert.match(oneTimeFoundingMigration, /target_price_id,null,target_amount_cents/);
+  assert.match(oneTimeFoundingMigration, /renewal_amount_cents=null/);
 });
 
 test("Premium entitlements match the marketplace growth package", () => {
@@ -152,15 +154,15 @@ test("marketplace search discloses paid placement and preserves performance orde
   assert.match(migration, /order by membership_rank desc,is_verified desc,average_rating desc nulls last,completed_job_count desc,name/);
 });
 
-test("Founding Partner sales page states the annual recurring offer and its limits", () => {
+test("Founding Partner sales page states the one-time offer and its limits", () => {
   assert.match(foundersPage, /founderPrice/);
-  assert.match(foundersPage, /renews automatically every 12 months until canceled/i);
-  assert.match(foundersPage, /first \$\{founderPrice\} charge is collected immediately/i);
+  assert.match(foundersPage, /does not renew automatically/i);
+  assert.match(foundersPage, /one-time payment checkout/i);
   assert.match(foundersPage, /does not guarantee leads, jobs, revenue/i);
   assert.match(foundersPage, /Applications may be reviewed/i);
 });
 
-test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled annual Price", () => {
+test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled one-time Price", () => {
   assert.match(foundersPage, /GuestFoundingCheckoutForm/);
   assert.match(foundersAction, /create_guest_founding_vendor_checkout/);
   assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
@@ -176,6 +178,17 @@ test("Founding Partner guest checkout reserves a webhook-backed claim using the 
   assert.doesNotMatch(foundersPage, /fake success|payment=success/);
 });
 
+test("one-time Founder webhooks verify paid payment Checkout without a subscription", () => {
+  assert.match(membershipStripe, /session\.mode==="payment"/);
+  assert.match(membershipStripe, /session\.payment_status!=="paid"/);
+  assert.match(membershipStripe, /paymentIntentId/);
+  assert.match(membershipStripe, /processOneTimeVendorMembershipCheckout/);
+  assert.match(membershipStripe, /process_one_time_vendor_membership_checkout/);
+  assert.match(oneTimeFoundingMigration, /target_payment_intent_id/);
+  assert.match(oneTimeFoundingMigration, /external_subscription_id=null/);
+  assert.match(membershipStripe, /record_guest_founding_vendor_payment/);
+});
+
 test("guest Founding Vendor checkout has an explicit, auditable membership source", () => {
   assert.match(guestClaimMigration, /'guest_founding_checkout'/);
   assert.match(guestCheckoutSourceMigration, /drop constraint if exists vendor_memberships_source_check/);
@@ -185,9 +198,9 @@ test("guest Founding Vendor checkout has an explicit, auditable membership sourc
   }
 });
 
-test("no active public offer page describes Founding Partner as one-time", () => {
-  for (const page of [homepage, foundersPage, pricingPage, legacyFoundingPage]) {
-    assert.doesNotMatch(page, /(?:Founding Partner|Founding Vendor|Founder)[^\n]{0,160}one[- ]time|one[- ]time[^\n]{0,160}(?:Founding Partner|Founding Vendor|Founder)/i);
+test("every active public offer page describes Founding Partner as one-time", () => {
+  for (const page of [homepage, foundersPage, pricingPage]) {
+    assert.match(page, /one[- ]time|Charged once|does not renew automatically/i);
   }
   assert.match(legacyFoundingPage, /redirect\("\/founders"\)/);
 });
