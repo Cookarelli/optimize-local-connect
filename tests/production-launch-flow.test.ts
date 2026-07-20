@@ -14,6 +14,7 @@ const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.t
 
 test("homepage exposes a direct Founding Vendor enrollment CTA above the fold", () => {
   assert.match(homepage, /Become a Founding Vendor/);
+  assert.match(homepage, /Founding Vendor Enrollment Now Open/);
   assert.match(homepage, /ArrowLink href="\/founders"/);
   assert.match(homepage, /ArrowLink href="\/founders">Become a Founding Vendor/);
   assert.match(homepage, /Vendor Login/);

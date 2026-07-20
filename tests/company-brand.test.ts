@@ -25,7 +25,7 @@ test("founder story preserves the 2008 local-economy lesson and manifesto", () =
 
 test("homepage positions the Rockford Founding Vendor network accurately", () => {
   const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.match(homePage, /Founding Vendor membership/);
+  assert.match(homePage, /Founding Vendor Enrollment Now Open/);
   assert.match(homePage, /Become a Founding Vendor/);
   assert.match(homePage, /more than 9,000 rental doors/);
   assert.match(homePage, /ArrowLink href="\/founders">Become a Founding Vendor — \{founderPrice\}/);
