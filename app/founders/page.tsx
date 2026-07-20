@@ -23,6 +23,7 @@ import {
 import { Logo } from "@/src/components/brand/logo";
 import { GuestFoundingCheckoutForm } from "@/src/components/founding-partner/guest-checkout-form";
 import { FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice } from "@/src/domain/vendor-memberships/catalog";
+import { FOUNDING_VENDOR_RESERVED_CATEGORIES, FOUNDING_VENDOR_RESERVATION_SUMMARY } from "@/src/domain/founding-partner/reserved-spots";
 
 const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
@@ -123,6 +124,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
               Join Optimize Local Connect early and give your service business preferred visibility with property managers, real estate professionals, landlords, homeowners, and other local buyers.
             </p>
+            <div id="reserved-spots" className="mt-6 flex max-w-2xl flex-wrap items-center gap-2 scroll-mt-24" aria-label={FOUNDING_VENDOR_RESERVATION_SUMMARY}><span className="rounded-full bg-amber-300 px-3 py-1.5 text-xs font-black uppercase tracking-[.1em] text-amber-950">{FOUNDING_VENDOR_RESERVATION_SUMMARY}</span>{FOUNDING_VENDOR_RESERVED_CATEGORIES.map((category) => <span key={category} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white">{category} occupied</span>)}</div>
             <div id="checkout" className="mt-9 max-w-xl scroll-mt-24"><GuestFoundingCheckoutForm /></div>
             <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-300"><LockKeyhole aria-hidden="true" className="size-4 text-emerald-400" />Secure checkout through Stripe</p>
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-400">Click to open Stripe’s hosted checkout. After Stripe verifies payment with our server, you will complete the business profile that goes to admin review.</p>
@@ -131,12 +133,12 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <aside className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[.06] shadow-2xl shadow-black/20 backdrop-blur">
             <div className="border-b border-white/10 p-6 sm:p-8">
               <p className="text-xs font-black uppercase tracking-[.18em] text-emerald-400">Founding Partner membership</p>
-              <div className="mt-5 flex items-end gap-3"><span className="text-7xl font-semibold tracking-[-.07em]">${FOUNDING_PARTNER_PLAN.amountCents / 100}</span><span className="pb-2 text-sm font-bold text-slate-400">per year</span></div>
-              <p className="mt-3 text-sm font-semibold text-emerald-300">Charged today. Renews automatically every 12 months until canceled.</p>
+              <div className="mt-5 flex items-end gap-3"><span className="text-7xl font-semibold tracking-[-.07em]">${FOUNDING_PARTNER_PLAN.amountCents / 100}</span><span className="pb-2 text-sm font-bold text-slate-400">one time</span></div>
+              <p className="mt-3 text-sm font-semibold text-emerald-300">Charged once today. No automatic renewal.</p>
               <p className="mt-5 text-base leading-7 text-slate-300">One good job can cover the cost. The membership creates opportunity; it does not promise leads or revenue.</p>
             </div>
             <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-8">
-              {["Founding Partner badge", "Enhanced profile", "Priority placement", "Annual membership"].map((item) => (
+              {["Founding Partner badge", "Enhanced profile", "Priority placement", "No auto-renewal"].map((item) => (
                 <p key={item} className="flex gap-2 text-sm leading-6 text-slate-200"><Check aria-hidden="true" className="mt-1 size-4 shrink-0 text-emerald-400" />{item}</p>
               ))}
             </div>
@@ -147,7 +149,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
       <section aria-label="Offer summary" className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-[90rem] gap-px bg-slate-200 sm:grid-cols-3">
           {[
-            [BriefcaseBusiness, "Built for working service businesses", "A straightforward annual membership you can manage through Stripe."],
+            [BriefcaseBusiness, "Built for working service businesses", "A straightforward one-time membership payment through Stripe."],
             [Users, "Reach local decision-makers", "A profile designed for the people who hire local vendors."],
             [Clock3, "Join during the early marketplace period", "Receive early-partner recognition as Connect grows."],
           ].map(([Icon, title, copy]) => {
@@ -222,7 +224,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <div aria-hidden="true" className="absolute -right-28 -top-28 size-80 rounded-full border-[52px] border-white/[.06]" />
           <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
             <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Partner</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">Make your local business easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">{founderPrice}. Charged once at Checkout with no automatic renewal. Limited availability; no guaranteed leads.</p><p className="mt-3 max-w-2xl text-xs leading-5 text-emerald-200">{FOUNDING_PARTNER_RENEWAL_DISCLOSURE}</p></div>
-            <div className="flex flex-col items-start gap-3 lg:items-stretch"><a href="#checkout" className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-emerald-800 hover:bg-emerald-50">Join now</a><Link href="/founding-fifty" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">Review category availability</Link></div>
+            <div className="flex flex-col items-start gap-3 lg:items-stretch"><a href="#checkout" className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-emerald-800 hover:bg-emerald-50">Join now</a><a href="#reserved-spots" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">Review reserved categories</a></div>
           </div>
         </div>
       </section>
@@ -230,7 +232,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
       <footer className="bg-white">
         <div className="mx-auto flex max-w-[90rem] flex-col gap-6 px-5 py-9 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
           <Logo />
-          <div className="flex flex-wrap gap-5 text-sm text-slate-500"><Link href="/">Platform</Link><Link href="/company">Company</Link><Link href="/founding-fifty">Founding Partner availability</Link><Link href="/sign-in?next=/founding-fifty">Sign in</Link></div>
+          <div className="flex flex-wrap gap-5 text-sm text-slate-500"><Link href="/">Platform</Link><Link href="/company">Company</Link><Link href="/founders">Founding Partner availability</Link><Link href="/sign-in">Vendor or Staff Login</Link></div>
         </div>
       </footer>
     </main>
