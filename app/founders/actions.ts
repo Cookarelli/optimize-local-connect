@@ -11,6 +11,42 @@ import { createVendorMembershipCheckout } from "@/src/lib/stripe/memberships";
 import { getStripeClient } from "@/src/lib/stripe/client";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
+const guestFoundingCheckoutEnvironment = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_FOUNDING_PRODUCT_ID",
+  "STRIPE_FOUNDING_VENDOR_PRICE_ID",
+  "NEXT_PUBLIC_APP_URL",
+] as const;
+
+function redactErrorText(value: string) {
+  const configuredSecrets = [process.env.STRIPE_SECRET_KEY, process.env.SUPABASE_SERVICE_ROLE_KEY].filter(
+    (secret): secret is string => Boolean(secret),
+  );
+  return configuredSecrets.reduce((text, secret) => text.replaceAll(secret, "[REDACTED]"), value)
+    .replace(/(?:sk|rk)_(?:test|live)_[A-Za-z0-9_]+/g, "[REDACTED_STRIPE_KEY]");
+}
+
+function logGuestFoundingCheckoutFailure(
+  error: unknown,
+  stripeApiCallAttempted: boolean,
+  stripeCheckoutSessionCreationAttempted: boolean,
+) {
+  const exception = error instanceof Error ? error : new Error(String(error));
+  console.error("guest_founding_checkout_failed", {
+    errorName: exception.name,
+    errorMessage: redactErrorText(exception.message),
+    errorStack: redactErrorText(exception.stack ?? "No stack trace available."),
+    environmentPresent: Object.fromEntries(
+      guestFoundingCheckoutEnvironment.map((name) => [name, Boolean(process.env[name])]),
+    ),
+    stripeApiCallAttempted,
+    stripeCheckoutSessionCreationAttempted,
+    failureTiming: stripeApiCallAttempted ? "after_stripe_api_call" : "before_stripe_api_call",
+  });
+}
+
 function safeLog(label: string, error: unknown, context: Record<string, string> = {}) {
   const errorType = error instanceof Error ? error.name : "UnknownError";
   console.error(label, { ...context, errorType });
@@ -33,9 +69,11 @@ export async function startGuestFoundingPartnerCheckout(_state: GuestCheckoutSta
   });
   if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the required business details." };
   const email = parsed.data.email.toLowerCase();
-  const admin = createSupabaseAdminClient();
   let checkoutUrl: string;
+  let stripeApiCallAttempted = false;
+  let stripeCheckoutSessionCreationAttempted = false;
   try {
+    const admin = createSupabaseAdminClient();
     const { data: reservation, error: reservationError } = await admin.rpc("create_guest_founding_vendor_checkout", {
       target_business_name: parsed.data.businessName, target_contact_name: parsed.data.contactName, target_contact_email: email,
       target_contact_phone: parsed.data.phone, target_primary_service_category: parsed.data.primaryServiceCategory,
@@ -45,8 +83,10 @@ export async function startGuestFoundingPartnerCheckout(_state: GuestCheckoutSta
     const row = Array.isArray(reservation) ? reservation[0] : reservation;
     if (reservationError || !row) throw reservationError ?? new Error("checkout reservation unavailable");
     const stripe = getStripeClient();
+    stripeApiCallAttempted = true;
     const customer = await stripe.customers.create({ email, name: parsed.data.businessName, metadata: { guest_claim_id: row.claim_id, organization_id: row.vendor_organization_id } }, { idempotencyKey: `guest-founder-${row.claim_id}` });
     const origin = await getAppOrigin();
+    stripeCheckoutSessionCreationAttempted = true;
     const session = await createVendorMembershipCheckout({
       planKey: FOUNDING_PARTNER_PLAN.key, organizationId: row.vendor_organization_id, membershipId: row.membership_id,
       guestClaimId: row.claim_id, customerId: customer.id, onboardingVersion: 1, checkoutAttemptNumber: row.checkout_attempt_number,
@@ -56,7 +96,7 @@ export async function startGuestFoundingPartnerCheckout(_state: GuestCheckoutSta
     if (attachError) throw attachError;
     checkoutUrl = session.url;
   } catch (error) {
-    safeLog("guest_founding_checkout_failed", error);
+    logGuestFoundingCheckoutFailure(error, stripeApiCallAttempted, stripeCheckoutSessionCreationAttempted);
     return { status: "error", message: "Secure checkout is temporarily unavailable. Please try again shortly." };
   }
   redirect(checkoutUrl);

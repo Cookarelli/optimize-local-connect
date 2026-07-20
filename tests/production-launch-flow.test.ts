@@ -29,6 +29,18 @@ test("Founding Vendor enrollment is public and server-controlled", () => {
   assert.match(pricingPage, /founding\?"\/founders"/);
 });
 
+test("guest checkout failures retain safe production diagnostics without changing the customer message", () => {
+  assert.match(foundersAction, /guest_founding_checkout_failed/);
+  assert.match(foundersAction, /errorName: exception\.name/);
+  assert.match(foundersAction, /errorMessage: redactErrorText\(exception\.message\)/);
+  assert.match(foundersAction, /errorStack: redactErrorText\(exception\.stack/);
+  assert.match(foundersAction, /environmentPresent:/);
+  assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
+  assert.match(foundersAction, /stripeCheckoutSessionCreationAttempted/);
+  assert.match(foundersAction, /failureTiming: stripeApiCallAttempted \? "after_stripe_api_call" : "before_stripe_api_call"/);
+  assert.match(foundersAction, /Secure checkout is temporarily unavailable\. Please try again shortly\./);
+});
+
 test("production redirects require the configured HTTPS app origin and preserve claim authentication", () => {
   assert.match(origin, /NEXT_PUBLIC_APP_URL is required in production/);
   assert.doesNotMatch(origin, /localhost/);
