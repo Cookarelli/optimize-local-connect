@@ -1,0 +1,6 @@
+begin;
+alter table public.property_manager_service_requests add column accepted_at timestamptz, add column accepted_vendor_organization_id uuid references public.organizations(id) on delete set null, add column declined_at timestamptz, add column declined_vendor_organization_id uuid references public.organizations(id) on delete set null, add column decline_reason text check(decline_reason is null or char_length(decline_reason)<=500);
+alter table public.property_manager_service_request_history add column vendor_visible boolean not null default false;
+create policy "pm_service_requests_read_assigned_vendor" on public.property_manager_service_requests for select to authenticated using (assigned_vendor_organization_id in (select organization_id from public.organization_members where user_id=auth.uid() and status='active'));
+create policy "pm_service_request_history_read_assigned_vendor" on public.property_manager_service_request_history for select to authenticated using (exists(select 1 from public.property_manager_service_requests r join public.organization_members m on m.organization_id=r.assigned_vendor_organization_id and m.user_id=auth.uid() and m.status='active' where r.id=request_id));
+commit;
