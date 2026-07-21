@@ -1,26 +1,16 @@
 import Link from "next/link";
-import { ArrowRight, Award, Building2, ShieldCheck, Store, TrendingUp, Users } from "lucide-react";
+import { ArrowRight, Building2, ClipboardList, Store, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { PropertyOperationsDashboard } from "@/src/components/dashboard/property-operations-dashboard";
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
-
-export default async function AdminDashboardPage() {
-  const user = await requireUser();
-  const membership = user.memberships[0];
-  if (!user.isSuperAdmin) {
-    if (!membership || !["owner", "admin"].includes(membership.role) || membership.organizationType !== "property_management") redirect(getRoleHome(user));
-    return <PropertyOperationsDashboard user={user} membership={membership} mode="admin" />;
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const [organizations, properties, vendors, members] = await Promise.all([
-    supabase.from("organizations").select("id", { count: "exact", head: true }),
-    supabase.from("properties").select("id", { count: "exact", head: true }),
-    supabase.from("vendor_profiles").select("organization_id", { count: "exact", head: true }).eq("verification_status", "verified"),
-    supabase.from("organization_members").select("id", { count: "exact", head: true }).eq("status", "active"),
-  ]);
-  const metrics = [["Organizations", organizations.count ?? 0, Building2], ["Properties", properties.count ?? 0, ShieldCheck], ["Verified vendors", vendors.count ?? 0, Store], ["Active members", members.count ?? 0, Users]] as const;
-  return <div><p className="text-sm font-semibold text-emerald-700">Platform administration</p><h1 className="mt-1 text-3xl font-semibold tracking-[-.035em] text-slate-950 sm:text-4xl">Connect control center</h1><p className="mt-2 text-sm text-slate-500">Cross-organization, industry vertical, and marketplace oversight.</p><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value.toLocaleString()}</p></div><span className="grid size-10 place-items-center rounded-xl bg-emerald-50"><Icon className="size-5 text-emerald-700" /></span></div></article>)}</section><div className="mt-8 grid gap-4 lg:grid-cols-3"><Link href="/admin/founders" className="flex items-center justify-between rounded-2xl bg-slate-950 p-6 text-white transition hover:bg-emerald-800"><span className="flex items-center gap-4"><span className="grid size-11 place-items-center rounded-xl bg-amber-300 text-amber-950"><Award className="size-5" /></span><span><span className="block font-bold">Founding Partner sales</span><span className="mt-1 block text-sm text-slate-400">Verified payments, application review, and marketplace activation</span></span></span><ArrowRight className="size-5" /></Link><Link href="/admin/impact" className="flex items-center justify-between rounded-2xl bg-emerald-700 p-6 text-white transition hover:bg-emerald-800"><span className="flex items-center gap-4"><span className="grid size-11 place-items-center rounded-xl bg-white/15"><TrendingUp className="size-5"/></span><span><span className="block font-bold">Impact Engine reporting</span><span className="mt-1 block text-sm text-emerald-100">Savings, response, jobs, vendor growth, and local spending</span></span></span><ArrowRight className="size-5"/></Link><Link href="/admin/founding-fifty" className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 text-slate-950 transition hover:border-emerald-300"><span className="flex items-center gap-4"><span className="grid size-11 place-items-center rounded-xl bg-slate-100"><Award className="size-5" /></span><span><span className="block font-bold">Legacy seat management</span><span className="mt-1 block text-sm text-slate-500">Reservations and permanent Founding Fifty seat records</span></span></span><ArrowRight className="size-5" /></Link></div></div>;
-}
+const cards=[
+  ["Service Requests","Review and manually assign property-manager opportunities.","/admin/service-requests",ClipboardList],
+  ["Vendor Pipeline","Manage outbound vendor recruiting prospects.","/admin/vendor-pipeline",Users],
+  ["Founding Vendors","Review Founder enrollment and membership status.","/admin/founding-vendors",Store],
+  ["Property Manager Request Entry","Submit a service request from the property-manager workspace.","/property-manager/service-requests",Building2],
+  ["Vendor Opportunities","View the assigned-vendor opportunity experience.","/vendor/opportunities",Store],
+  ["Vendor Dashboard Demo","Open the sales demonstration dashboard.","/demo/vendor-dashboard",Building2],
+] as const;
+export default async function AdminDashboardPage(){const user=await requireUser();const membership=user.memberships[0];if(!user.isSuperAdmin){if(!membership||!["owner","admin"].includes(membership.role)||membership.organizationType!=="property_management")redirect(getRoleHome(user));return <PropertyOperationsDashboard user={user} membership={membership} mode="admin"/>;}const db=await createSupabaseServerClient();const [{count:requests},{count:vendors}]=await Promise.all([db.from("property_manager_service_requests").select("id",{count:"exact",head:true}),db.from("vendor_profiles").select("organization_id",{count:"exact",head:true})]);return <div><p className="text-sm font-semibold text-emerald-700">Platform administration</p><h1 className="mt-1 text-4xl font-semibold tracking-tight">Platform Control Center</h1><p className="mt-3 text-sm text-slate-500">Secure cross-platform control for Optimize Local Connect.</p><div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{cards.map(([title,copy,href,Icon])=><Link key={href} href={href} className="rounded-2xl border border-slate-200 bg-white p-6 hover:border-emerald-300"><Icon className="size-6 text-emerald-700"/><h2 className="mt-5 font-bold">{title}</h2><p className="mt-2 text-sm text-slate-500">{copy}</p>{title==="Service Requests"?<p className="mt-3 text-xs font-bold text-emerald-700">{requests??0} current records</p>:title==="Vendor Pipeline"?<p className="mt-3 text-xs font-bold text-emerald-700">{vendors??0} vendor profiles</p>:null}<span className="mt-5 inline-flex items-center text-sm font-bold text-slate-950">Open <ArrowRight className="ml-2 size-4"/></span></Link>)}</div></div>}

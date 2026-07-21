@@ -37,7 +37,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   const organizationId = activeMembership?.organizationId;
   const visibleNav = [
     { label: "Overview", href: getRoleHome(user), icon: LayoutDashboard },
-    ...(user.isSuperAdmin ? [{ label: "Founding Partners", href: "/admin/founders", icon: Award }] : []),
+    ...(user.isSuperAdmin ? [{ label: "Platform Control Center", href: "/admin", icon: Award }, { label: "Founding Partners", href: "/admin/founders", icon: Award }] : []),
     ...(activeMembership && ["owner", "admin"].includes(activeMembership.role) ? [{ label: "Connected Payments", href: "/payments/connect", icon: CreditCard }] : []),
     ...nav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
   ];
