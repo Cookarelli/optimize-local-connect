@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/src/components/brand/logo";
 import { GuestFoundingCheckoutForm } from "@/src/components/founding-partner/guest-checkout-form";
-import { FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice } from "@/src/domain/vendor-memberships/catalog";
+import { FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice, normalizeVendorPlanKey } from "@/src/domain/vendor-memberships/catalog";
 import { FOUNDING_VENDOR_RESERVED_CATEGORIES, FOUNDING_VENDOR_RESERVATION_SUMMARY } from "@/src/domain/founding-partner/reserved-spots";
 
 const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
@@ -80,8 +80,15 @@ const faqs = [
   ["What information is needed?", "Stripe first collects your email and business name. After verified payment, you will add a contact name, phone, website if available, service category, city, and a short business description for review."],
 ] as const;
 
-export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string }> }) {
-  const { checkout, onboarding } = await searchParams;
+const membershipCards = [
+  { key: "founding_partner", name: "Founder", price: "$299/year", badge: "Founder Badge", features: ["Highest placement", "Founder recognition", "Early access", "Featured profile"] },
+  { key: "preferred", name: "Preferred", price: "$49/month", badge: "Preferred Badge", features: ["Higher placement", "Preferred badge", "Enhanced profile"] },
+  { key: "network", name: "Network", price: "$19/month", badge: "Network Badge", features: ["Listed in marketplace", "Vendor profile", "Opportunity access"] },
+] as const;
+
+export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string; plan?: string }> }) {
+  const { checkout, onboarding, plan: requestedPlan } = await searchParams;
+  const selectedPlan = normalizeVendorPlanKey(requestedPlan ?? "") ?? "founding_partner";
   const checkoutMessage = checkout === "cancelled"
     ? "Checkout was cancelled. You were not charged and can restart whenever you are ready."
     : checkout === "sold_out"
@@ -125,7 +132,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
               Join Optimize Local Connect early and give your service business preferred visibility with property managers, real estate professionals, landlords, homeowners, and other local buyers.
             </p>
             <div id="reserved-spots" className="mt-6 flex max-w-2xl flex-wrap items-center gap-2 scroll-mt-24" aria-label={FOUNDING_VENDOR_RESERVATION_SUMMARY}><span className="rounded-full bg-amber-300 px-3 py-1.5 text-xs font-black uppercase tracking-[.1em] text-amber-950">{FOUNDING_VENDOR_RESERVATION_SUMMARY}</span>{FOUNDING_VENDOR_RESERVED_CATEGORIES.map((category) => <span key={category} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white">{category} occupied</span>)}</div>
-            <div id="checkout" className="mt-9 max-w-xl scroll-mt-24"><GuestFoundingCheckoutForm /></div>
+            <div id="checkout" className="mt-9 max-w-xl scroll-mt-24"><GuestFoundingCheckoutForm defaultPlan={selectedPlan} /></div>
             <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-300"><LockKeyhole aria-hidden="true" className="size-4 text-emerald-400" />Secure checkout through Stripe</p>
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-400">Click to open Stripe’s hosted checkout. After Stripe verifies payment with our server, you will complete the business profile that goes to admin review.</p>
           </div>
@@ -143,6 +150,16 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
               ))}
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section id="plans" className="scroll-mt-24 border-b border-slate-200 bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12">
+          <p className="section-kicker">Membership plans</p>
+          <h2 className="section-title">Choose the presence that fits your business.</h2>
+          <div className="mt-9 grid gap-4 lg:grid-cols-3">
+            {membershipCards.map((plan) => <article key={plan.key} className={`flex flex-col rounded-[1.5rem] border p-6 ${plan.key === "preferred" ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-[#f7f8f4]"}`}><p className="text-xs font-black uppercase tracking-[.16em] text-emerald-700">{plan.badge}</p><h3 className="mt-4 text-2xl font-bold">{plan.name}</h3><p className="mt-3 text-3xl font-semibold">{plan.price}</p><ul className="mt-6 space-y-3 border-t border-slate-200 pt-5">{plan.features.map(feature => <li key={feature} className="flex gap-2 text-sm text-slate-600"><Check aria-hidden="true" className="size-4 shrink-0 text-emerald-600" />{feature}</li>)}</ul><a href={`/founders?plan=${plan.key}#checkout`} className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white hover:bg-emerald-700">Choose Plan</a></article>)}
+          </div>
         </div>
       </section>
 

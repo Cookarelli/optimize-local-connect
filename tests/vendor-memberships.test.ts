@@ -69,6 +69,12 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
   assert.match(foundersAction, /createVendorMembershipCheckout\(checkoutPayload\)/);
 });
 
+test("public membership page presents every plan and preselects it for guest checkout", () => {
+  for (const offer of ["Founder", "Preferred", "Network", "$299/year", "$49/month", "$19/month", "Founder Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(foundersPage, new RegExp(offer.replaceAll("$", "\\$")));
+  assert.match(foundersPage, /founders\?plan=\$\{plan\.key\}#checkout/);
+  assert.match(foundersPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
+});
+
 test("centralized entitlements require a current paid or explicitly granted status",()=>{
   const founder={code:"founding_partner",status:"active"};const network={code:"network",status:"active"};const preferred={code:"preferred",status:"active"};
   assert.equal(canAppearInDirectory(founder),true);assert.equal(canAppearInDirectory(network),true);assert.equal(canAppearInDirectory({code:"network",status:"past_due"}),false);
