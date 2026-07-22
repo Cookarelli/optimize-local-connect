@@ -30,11 +30,11 @@ const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 export const metadata: Metadata = {
   title: "Vendor Memberships",
   description:
-    "Choose the plan that fits your business: Founder, Preferred, or Network.",
+    "Join a relationship-driven local contractor network for property managers: Founder, Preferred, and Network memberships have limited initial availability by service category.",
   alternates: { canonical: "https://www.optimizelocalai.com/memberships" },
   openGraph: {
     title: "Optimize Local Connect Vendor Memberships",
-    description: `${founderPrice}. Preferred visibility, early access, and Founder recognition while the membership remains eligible.`,
+    description: `${founderPrice}. Limited Founder, Preferred, and Network availability for local vendors building long-term property-management relationships.`,
     images: [{ url: "/og-founders.png", width: 1536, height: 1024, alt: "Optimize Local Connect Vendor Memberships" }],
   },
   twitter: { card: "summary_large_image", images: ["/og-founders.png"] },
@@ -81,9 +81,9 @@ const faqs = [
 ] as const;
 
 const membershipCards = [
-  { key: "founding_partner", name: "Founder", price: "$299/year", badge: "Founder Badge", features: ["Highest placement", "Founder recognition", "Early access", "Featured profile"] },
-  { key: "preferred", name: "Preferred", price: "$49/month", badge: "Preferred Badge", features: ["Higher placement", "Preferred badge", "Enhanced profile"] },
-  { key: "network", name: "Network", price: "$19/month", badge: "Network Badge", features: ["Listed in marketplace", "Vendor profile", "Opportunity access"] },
+  { key: "founding_partner", name: "Founder", price: "$299/year", badge: "Founder Badge", features: ["Highest placement", "Founder recognition", "Early access", "Featured profile", "Limited positions, first come, first served"] },
+  { key: "preferred", name: "Preferred", price: "$49/month", badge: "Preferred Badge", features: ["Higher placement", "Preferred badge", "Enhanced profile", "Five positions initially available per service category"] },
+  { key: "network", name: "Network", price: "$19/month", badge: "Network Badge", features: ["Listed in marketplace", "Vendor profile", "Opportunity access", "Ten positions initially available per service category"] },
 ] as const;
 
 export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string; plan?: string }> }) {
@@ -129,9 +129,10 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
               Choose the plan that fits your <span className="text-emerald-400">business.</span>
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300 sm:text-xl">
-              Join Optimize Local Connect early and give your service business preferred visibility with property managers, real estate professionals, landlords, homeowners, and other local buyers.
+              Join a relationship-driven local network for property managers seeking responsive contractors they can call again and again—not just whichever company appears first in a Google search.
             </p>
             <div id="reserved-spots" className="mt-6 flex max-w-2xl flex-wrap items-center gap-2 scroll-mt-24" aria-label={FOUNDING_VENDOR_RESERVATION_SUMMARY}><span className="rounded-full bg-amber-300 px-3 py-1.5 text-xs font-black uppercase tracking-[.1em] text-amber-950">{FOUNDING_VENDOR_RESERVATION_SUMMARY}</span>{FOUNDING_VENDOR_RESERVED_CATEGORIES.map((category) => <span key={category} className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white">{category} occupied</span>)}</div>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">Founder positions are limited and awarded first come, first served. Five Preferred positions and ten Network positions are initially available per service category.</p>
             <div id="checkout" className="mt-9 max-w-xl scroll-mt-24"><GuestFoundingCheckoutForm defaultPlan={selectedPlan} /></div>
             <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-300"><LockKeyhole aria-hidden="true" className="size-4 text-emerald-400" />Secure checkout through Stripe</p>
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-400">Click to open Stripe’s hosted checkout. After Stripe verifies payment with our server, you will complete the business profile that goes to admin review.</p>

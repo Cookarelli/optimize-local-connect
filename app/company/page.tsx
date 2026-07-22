@@ -16,10 +16,10 @@ import { COMPANY_VALUES, PLATFORM_BRAND } from "@/src/domain/platform/brand";
 
 export const metadata: Metadata = {
   title: { absolute: `Company | ${PLATFORM_BRAND.parentName}` },
-  description: PLATFORM_BRAND.philosophy,
+  description: "Optimize Local Connect helps property managers build dependable, long-term relationships with responsive local contractors.",
   openGraph: {
     title: `${PLATFORM_BRAND.parentName} | Technology should make communities stronger.`,
-    description: PLATFORM_BRAND.philosophy,
+    description: "Dependable local vendors and stronger property-management relationships, starting with a growing network of more than 100 local homes.",
     images: [{ url: "/og-company.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.parentName} — Technology should make communities stronger.` }],
   },
 };
@@ -148,6 +148,13 @@ export default function CompanyPage() {
             <p className="mt-8 text-base leading-8 text-slate-600">We are building technology to make that choice easier: not a directory, but an intelligent community platform that helps local businesses earn opportunity on trust and helps organizations understand the impact of where they spend.</p>
             <blockquote className="mt-14 border-l-2 border-emerald-600 pl-6 text-3xl font-semibold leading-tight tracking-[-.035em] text-slate-900 sm:text-4xl">“We’re not building software.<br /><br />We’re building stronger local economies—<br /><br />one optimized decision at a time.”</blockquote>
           </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-24 sm:py-32">
+        <div className="mx-auto grid max-w-[90rem] gap-12 px-5 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:items-center lg:px-12">
+          <div><p className="section-kicker">Property Management launch</p><div className="mt-8 flex items-center gap-3 text-sm font-semibold text-slate-600"><HeartHandshake className="size-5 text-emerald-700" /> Relationship-driven by design</div></div>
+          <div className="max-w-4xl"><h2 className="text-4xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl">Dependable local vendors. Stronger property-management relationships.</h2><div className="mt-8 space-y-5 text-base leading-8 text-slate-600"><p>Optimize Local Connect was inspired by a request from property-management leader Mary O’Sullivan. Property managers need dependable contractors who arrive on time, communicate clearly, and become trusted repeat-work partners.</p><p>Instead of repeatedly searching Google for a new contractor, property managers can build long-term relationships with responsive local vendors and pursue preferred pricing or discounts for repeat business where those vendors offer them.</p><p>A growing network serving more than 100 local homes—and counting. The platform is being built to support 10,000–15,000 homes as participation expands across the Northern Illinois Landlord Association and the broader regional property-management community.</p></div></div>
         </div>
       </section>
 

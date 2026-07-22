@@ -23,14 +23,29 @@ test("founder story preserves the 2008 local-economy lesson and manifesto", () =
   assert.match(companyPage, /one optimized decision at a time/);
 });
 
-test("homepage positions the Rockford Founding Vendor network accurately", () => {
+test("public messaging reflects the launch network and relationship-driven positioning", () => {
   const homePage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const companyPage = readFileSync(new URL("../app/company/page.tsx", import.meta.url), "utf8");
+  const membershipsPage = readFileSync(new URL("../app/memberships/page.tsx", import.meta.url), "utf8");
+  const demoPage = readFileSync(new URL("../app/demo/vendor-dashboard/page.tsx", import.meta.url), "utf8");
+  const publicSource = [homePage, companyPage, membershipsPage, demoPage].join("\n");
   assert.match(homePage, /Founding Vendor Enrollment Now Open/);
-  assert.match(homePage, /Become a Founding Vendor/);
-  assert.match(homePage, /more than 9,000 rental doors/);
+  assert.match(homePage, /Dependable local vendors/);
+  assert.match(homePage, /A growing network serving more than 100 local homes—and counting/);
+  assert.match(companyPage, /inspired by a request from property-management leader Mary O’Sullivan/);
+  assert.match(companyPage, /repeatedly searching Google for a new contractor/);
+  assert.match(membershipsPage, /Founder positions are limited and awarded first come, first served/);
+  assert.match(membershipsPage, /Five Preferred positions and ten Network positions are initially available per service category/);
+  assert.match(membershipsPage, /Five positions initially available per service category/);
+  assert.match(membershipsPage, /Ten positions initially available per service category/);
+  assert.doesNotMatch(publicSource, /9,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
+  assert.doesNotMatch(publicSource, /18,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
+  assert.doesNotMatch(publicSource, /guaranteed (?:NILA|Northern Illinois Landlord Association) adoption/i);
+  assert.doesNotMatch(publicSource, /all (?:NILA|Northern Illinois Landlord Association) members (?:use|are on)/i);
   assert.match(homePage, /ArrowLink href="\/founders">Become a Founding Vendor — \{founderPrice\}/);
   assert.match(homePage, /Founders receive premium placement/);
   assert.match(homePage, /Renews annually unless canceled/);
-  assert.match(homePage, /broader rental-property network/);
-  assert.doesNotMatch(homePage, /400 property managers (?:are|currently) (?:active|using)/i);
+  assert.match(membershipsPage, /\$299\/year/);
+  assert.match(membershipsPage, /\$49\/month/);
+  assert.match(membershipsPage, /\$19\/month/);
 });
