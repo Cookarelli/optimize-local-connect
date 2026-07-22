@@ -10,6 +10,7 @@ const subscriptionMigration = readFileSync(new URL("../supabase/migrations/20260
 const reconciliationMigration = readFileSync(new URL("../supabase/migrations/202607180022_stripe_membership_reconciliation.sql", import.meta.url), "utf8");
 const membershipStripe = readFileSync(new URL("../src/lib/stripe/memberships.ts", import.meta.url), "utf8");
 const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
+const membershipsPage = readFileSync(new URL("../app/memberships/page.tsx", import.meta.url), "utf8");
 const foundersPage = readFileSync(new URL("../app/founders/page.tsx", import.meta.url), "utf8");
 const foundersAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
 const homepage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
@@ -70,9 +71,10 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
 });
 
 test("public membership page presents every plan and preselects it for guest checkout", () => {
-  for (const offer of ["Founder", "Preferred", "Network", "$299/year", "$49/month", "$19/month", "Founder Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(foundersPage, new RegExp(offer.replaceAll("$", "\\$")));
-  assert.match(foundersPage, /founders\?plan=\$\{plan\.key\}#checkout/);
-  assert.match(foundersPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
+  for (const offer of ["Founder", "Preferred", "Network", "$299/year", "$49/month", "$19/month", "Founder Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
+  assert.match(membershipsPage, /memberships\?plan=\$\{plan\.key\}#checkout/);
+  assert.match(membershipsPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
+  assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
 });
 
 test("centralized entitlements require a current paid or explicitly granted status",()=>{
@@ -169,15 +171,15 @@ test("marketplace search discloses paid placement and preserves performance orde
 });
 
 test("Founder sales page states the recurring annual offer and its limits", () => {
-  assert.match(foundersPage, /founderPrice/);
-  assert.match(foundersPage, /renews annually/i);
-  assert.match(foundersPage, /annual membership/i);
-  assert.match(foundersPage, /does not guarantee leads, jobs, revenue/i);
-  assert.match(foundersPage, /Applications may be reviewed/i);
+  assert.match(membershipsPage, /founderPrice/);
+  assert.match(membershipsPage, /renews annually/i);
+  assert.match(membershipsPage, /annual membership/i);
+  assert.match(membershipsPage, /does not guarantee leads, jobs, revenue/i);
+  assert.match(membershipsPage, /Applications may be reviewed/i);
 });
 
 test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled one-time Price", () => {
-  assert.match(foundersPage, /GuestFoundingCheckoutForm/);
+  assert.match(membershipsPage, /GuestFoundingCheckoutForm/);
   assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
   assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.match(foundersAction, /membership\/claim\?session_id=\{CHECKOUT_SESSION_ID\}/);
@@ -188,8 +190,8 @@ test("Founding Partner guest checkout reserves a webhook-backed claim using the 
   assert.match(membershipStripe, /record_guest_founding_vendor_payment/);
   assert.match(guestClaimPage, /same email address entered at checkout/i);
   assert.match(guestClaimStatus, /Cache-Control.*no-store/);
-  assert.match(foundersPage, /Secure checkout through Stripe/);
-  assert.doesNotMatch(foundersPage, /fake success|payment=success/);
+  assert.match(membershipsPage, /Secure checkout through Stripe/);
+  assert.doesNotMatch(membershipsPage, /fake success|payment=success/);
 });
 
 test("one-time Founder webhooks verify paid payment Checkout without a subscription", () => {
@@ -213,8 +215,8 @@ test("guest Founding Vendor checkout has an explicit, auditable membership sourc
 });
 
 test("every active public offer page describes Founder as recurring", () => {
-  for (const page of [homepage, foundersPage, pricingPage]) {
+  for (const page of [homepage, membershipsPage, pricingPage]) {
     assert.match(page, /renew|annual/i);
   }
-  assert.match(legacyFoundingPage, /redirect\("\/founders"\)/);
+  assert.match(legacyFoundingPage, /redirect\("\/memberships"\)/);
 });
