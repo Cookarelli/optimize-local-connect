@@ -21,27 +21,29 @@ const oneTimeFoundingMigration = readFileSync(new URL("../supabase/migrations/20
 const guestClaimPage = readFileSync(new URL("../app/membership/claim/page.tsx", import.meta.url), "utf8");
 const guestClaimStatus = readFileSync(new URL("../app/api/membership/claim-status/route.ts", import.meta.url), "utf8");
 
-test("vendor membership catalog exposes only the three paid launch plans", () => {
-  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.key), ["founding_partner","network","preferred"]);
+test("vendor membership catalog exposes exactly the three recurring offers", () => {
+  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.key), ["founding_partner","preferred","network"]);
+  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.name), ["Founder","Preferred","Network"]);
   assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "network")?.amountCents, 1900);
   assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "preferred")?.amountCents, 4900);
   assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "founding_partner")?.capacity, 50);
   assert.ok(VENDOR_MEMBERSHIP_PLANS.every(plan=>plan.paymentRequired&&plan.manualApprovalRequired&&plan.publicationEligible&&plan.publiclyPurchasable));
-  assert.equal(FOUNDING_PARTNER_PLAN.name, "Founding Partner");
+  assert.equal(FOUNDING_PARTNER_PLAN.name, "Founder");
   assert.equal(FOUNDING_PARTNER_PLAN.amountCents, 29900);
   assert.equal(FOUNDING_PARTNER_PLAN.currency, "USD");
-  assert.equal(FOUNDING_PARTNER_PLAN.interval, null);
-  assert.equal(FOUNDING_PARTNER_PLAN.checkoutMode, "payment");
+  assert.equal(FOUNDING_PARTNER_PLAN.interval, "year");
+  assert.equal(FOUNDING_PARTNER_PLAN.checkoutMode, "subscription");
   assert.equal(FOUNDING_PARTNER_PLAN.stripeProductEnv, "STRIPE_FOUNDING_PRODUCT_ID");
   assert.equal(FOUNDING_PARTNER_PLAN.stripePriceEnv, "STRIPE_FOUNDING_VENDOR_PRICE_ID");
-  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$299");
+  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$299/year");
+  assert.ok(VENDOR_MEMBERSHIP_PLANS.every(plan => plan.checkoutMode === "subscription" && plan.interval !== null && plan.renewal.behavior === "same_stripe_price"));
 });
 
 test("every publicly purchasable paid tier requires a distinct Stripe Product and Price", () => {
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan=>[plan.key,plan.stripeProductEnv,plan.stripePriceEnv]),[
     ["founding_partner","STRIPE_FOUNDING_PRODUCT_ID","STRIPE_FOUNDING_VENDOR_PRICE_ID"],
-    ["network","STRIPE_NETWORK_PRODUCT_ID","STRIPE_NETWORK_MEMBER_PRICE_ID"],
     ["preferred","STRIPE_PREFERRED_PRODUCT_ID","STRIPE_PREFERRED_VENDOR_PRICE_ID"],
+    ["network","STRIPE_NETWORK_PRODUCT_ID","STRIPE_NETWORK_MEMBER_PRICE_ID"],
   ]);
   const configured = validatePurchasableVendorPlanStripeConfig({
     STRIPE_FOUNDING_PRODUCT_ID:"prod_founder",
@@ -51,10 +53,20 @@ test("every publicly purchasable paid tier requires a distinct Stripe Product an
     STRIPE_PREFERRED_PRODUCT_ID:"prod_preferred",
     STRIPE_PREFERRED_VENDOR_PRICE_ID:"price_preferred",
   });
-  assert.deepEqual(configured.map(item=>item.key),["founding_partner","network","preferred"]);
+  assert.deepEqual(configured.map(item=>item.key),["founding_partner","preferred","network"]);
   assert.equal(new Set(configured.map(item=>item.productId)).size,configured.length);
   assert.equal(new Set(configured.map(item=>item.priceId)).size,configured.length);
   assert.throws(()=>validatePurchasableVendorPlanStripeConfig({}),/STRIPE_FOUNDING_PRODUCT_ID/);
+});
+
+test("guest checkout uses the selected canonical plan for Stripe and membership metadata", () => {
+  assert.match(foundersAction, /normalizeVendorPlanKey/);
+  assert.match(foundersAction, /getVendorPlanProductId\(plan\)/);
+  assert.match(foundersAction, /getVendorPlanPriceId\(plan\)/);
+  assert.match(foundersAction, /planKey: plan\.key/);
+  assert.match(foundersAction, /target_plan_code: plan\.code/);
+  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
+  assert.match(foundersAction, /createVendorMembershipCheckout\(checkoutPayload\)/);
 });
 
 test("centralized entitlements require a current paid or explicitly granted status",()=>{
@@ -114,13 +126,9 @@ test("Premium and Founding Partner receive Premium placement", () => {
   assert.equal(isPremiumMembership("verified"), false);
 });
 
-test("Founding Partner is restored to the one-time membership model", () => {
-  assert.match(migration, /'one_time',29900,50/);
-  assert.match(oneTimeFoundingMigration, /billing_model='one_time'/);
-  assert.match(oneTimeFoundingMigration, /one_time_price_cents=29900/);
-  assert.match(oneTimeFoundingMigration, /target_interval is not null/);
-  assert.match(oneTimeFoundingMigration, /target_price_id,null,target_amount_cents/);
-  assert.match(oneTimeFoundingMigration, /renewal_amount_cents=null/);
+test("canonical Founder billing is annual and renewable", () => {
+  assert.equal(FOUNDING_PARTNER_PLAN.interval, "year");
+  assert.equal(FOUNDING_PARTNER_PLAN.renewal.behavior, "same_stripe_price");
 });
 
 test("Premium entitlements match the marketplace growth package", () => {
@@ -154,18 +162,18 @@ test("marketplace search discloses paid placement and preserves performance orde
   assert.match(migration, /order by membership_rank desc,is_verified desc,average_rating desc nulls last,completed_job_count desc,name/);
 });
 
-test("Founding Partner sales page states the one-time offer and its limits", () => {
+test("Founder sales page states the recurring annual offer and its limits", () => {
   assert.match(foundersPage, /founderPrice/);
-  assert.match(foundersPage, /does not renew automatically/i);
-  assert.match(foundersPage, /one-time payment checkout/i);
+  assert.match(foundersPage, /renews annually/i);
+  assert.match(foundersPage, /annual membership/i);
   assert.match(foundersPage, /does not guarantee leads, jobs, revenue/i);
   assert.match(foundersPage, /Applications may be reviewed/i);
 });
 
 test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled one-time Price", () => {
   assert.match(foundersPage, /GuestFoundingCheckoutForm/);
-  assert.match(foundersAction, /create_guest_founding_vendor_checkout/);
-  assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
+  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
+  assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.match(foundersAction, /membership\/claim\?session_id=\{CHECKOUT_SESSION_ID\}/);
   assert.match(foundersAction, /cancelUrl: `\$\{origin\}\/founders\?checkout=cancelled`/);
   assert.match(guestClaimMigration, /vendor_membership_guest_claims/);
@@ -198,9 +206,9 @@ test("guest Founding Vendor checkout has an explicit, auditable membership sourc
   }
 });
 
-test("every active public offer page describes Founding Partner as one-time", () => {
+test("every active public offer page describes Founder as recurring", () => {
   for (const page of [homepage, foundersPage, pricingPage]) {
-    assert.match(page, /one[- ]time|Charged once|does not renew automatically/i);
+    assert.match(page, /renew|annual/i);
   }
   assert.match(legacyFoundingPage, /redirect\("\/founders"\)/);
 });

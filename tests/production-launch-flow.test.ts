@@ -39,19 +39,19 @@ test("the Founder page shows the current reserved-spot counter and categories", 
   assert.match(foundersPage, /FOUNDING_VENDOR_RESERVATION_SUMMARY/);
   assert.match(foundersPage, /FOUNDING_VENDOR_RESERVED_CATEGORIES/);
   assert.match(foundersPage, /category} occupied/);
-  assert.doesNotMatch(foundersPage, /Renews automatically|per year|Annual membership/);
+  assert.match(foundersPage, /renews annually|per year|Annual membership/i);
 });
 
 test("Founding Vendor enrollment is public and server-controlled", () => {
   assert.match(foundersPage, /GuestFoundingCheckoutForm/);
-  assert.match(foundersAction, /create_guest_founding_vendor_checkout/);
-  assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
+  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
+  assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.doesNotMatch(foundersAction, /requireUser\(|getCurrentUser\(/);
   assert.match(pricingPage, /founding\?"\/founders"/);
 });
 
 test("guest checkout validation failures log Zod issue categories without customer values", () => {
-  assert.match(foundersAction, /guest_founding_checkout_validation_failed/);
+  assert.match(foundersAction, /guest_membership_checkout_validation_failed/);
   assert.match(foundersAction, /stage: "validating_form"/);
   assert.match(foundersAction, /issueCodes: parsed\.error\.issues/);
   assert.match(foundersAction, /issuePaths: parsed\.error\.issues/);
@@ -65,8 +65,8 @@ test("guest checkout pending membership failures identify the database stage", (
 
 test("guest checkout product and price configuration failures identify their stage", () => {
   assert.match(foundersAction, /stage = "validating_price_product"/);
-  assert.match(foundersAction, /getVendorPlanProductId\(FOUNDING_PARTNER_PLAN\)/);
-  assert.match(foundersAction, /getVendorPlanPriceId\(FOUNDING_PARTNER_PLAN\)/);
+  assert.match(foundersAction, /getVendorPlanProductId\(plan\)/);
+  assert.match(foundersAction, /getVendorPlanPriceId\(plan\)/);
 });
 
 test("guest checkout payload construction is a named pre-session stage", () => {
@@ -76,12 +76,12 @@ test("guest checkout payload construction is a named pre-session stage", () => {
 });
 
 test("guest checkout failures retain safe diagnostics for thrown objects and preserve the customer message", () => {
-  assert.match(foundersAction, /guest_founding_checkout_failed/);
+  assert.match(foundersAction, /guest_membership_checkout_failed/);
   assert.match(foundersAction, /errorName: name/);
   assert.match(foundersAction, /unknownErrorDetails/);
   assert.match(foundersAction, /failedStage: stage/);
   assert.match(foundersAction, /environmentPresent:/);
-  assert.match(foundersAction, /STRIPE_FOUNDING_VENDOR_PRICE_ID/);
+  assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.match(foundersAction, /stripeCheckoutSessionCreationAttempted/);
   assert.match(foundersAction, /failureTiming: stripeApiCallAttempted \? "after_stripe_api_call" : "before_stripe_api_call"/);
   assert.match(foundersAction, /"loading_configuration"/);

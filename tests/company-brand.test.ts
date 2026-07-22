@@ -29,8 +29,8 @@ test("homepage positions the Rockford Founding Vendor network accurately", () =>
   assert.match(homePage, /Become a Founding Vendor/);
   assert.match(homePage, /more than 9,000 rental doors/);
   assert.match(homePage, /ArrowLink href="\/founders">Become a Founding Vendor — \{founderPrice\}/);
-  assert.match(homePage, /Founding Vendors receive premium placement/);
-  assert.match(homePage, /Charged once today with no automatic renewal/);
+  assert.match(homePage, /Founders receive premium placement/);
+  assert.match(homePage, /Renews annually unless canceled/);
   assert.match(homePage, /broader rental-property network/);
   assert.doesNotMatch(homePage, /400 property managers (?:are|currently) (?:active|using)/i);
 });

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { foundingPartnerDraftSchema, foundingPartnerSubmissionSchema, onboardingDraftFromFormData } from "@/src/domain/founding-partner/onboarding";
-import { FOUNDING_PARTNER_PLAN, getVendorPlanPriceId, getVendorPlanProductId } from "@/src/domain/vendor-memberships/catalog";
+import { getVendorPlan, getVendorPlanPriceId, getVendorPlanProductId, normalizeVendorPlanKey } from "@/src/domain/vendor-memberships/catalog";
 import { getAppOrigin } from "@/src/lib/auth/origin";
 import { resolveFoundingPartnerOnboardingAccess } from "@/src/lib/founding-partner/onboarding-access";
 import { createVendorMembershipCheckout } from "@/src/lib/stripe/memberships";
@@ -28,7 +28,7 @@ function redactErrorText(value: string) {
     .replace(/(?:sk|rk)_(?:test|live)_[A-Za-z0-9_]+/g, "[REDACTED_STRIPE_KEY]");
 }
 
-type GuestFoundingCheckoutStage =
+type GuestMembershipCheckoutStage =
   | "validating_form"
   | "loading_configuration"
   | "validating_price_product"
@@ -57,24 +57,24 @@ function unknownErrorDetails(error: unknown) {
   };
 }
 
-function asCheckoutError(stage: GuestFoundingCheckoutStage, error: unknown) {
+function asCheckoutError(stage: GuestMembershipCheckoutStage, error: unknown) {
   if (error instanceof Error) return error;
   const wrapped = new Error(`Guest checkout failed during ${stage}.`);
   Object.defineProperty(wrapped, "cause", { value: error, enumerable: false });
   return wrapped;
 }
 
-function logGuestFoundingCheckoutStage(stage: GuestFoundingCheckoutStage) {
-  console.info("guest_founding_checkout_stage", { stage });
+function logGuestMembershipCheckoutStage(stage: GuestMembershipCheckoutStage) {
+  console.info("guest_membership_checkout_stage", { stage });
 }
 
-function logGuestFoundingCheckoutFailure(
+function logGuestMembershipCheckoutFailure(
   error: unknown,
-  stage: GuestFoundingCheckoutStage,
+  stage: GuestMembershipCheckoutStage,
   stripeApiCallAttempted: boolean,
   stripeCheckoutSessionCreationAttempted: boolean,
 ) {
-  console.error("guest_founding_checkout_failed", {
+  console.error("guest_membership_checkout_failed", {
     ...unknownErrorDetails(error),
     failedStage: stage,
     environmentPresent: Object.fromEntries(
@@ -101,87 +101,92 @@ const guestFoundingCheckoutSchema = z.object({
 
 export type GuestCheckoutState = { status: "idle" | "error"; message?: string };
 
-export async function startGuestFoundingPartnerCheckout(_state: GuestCheckoutState, formData: FormData): Promise<GuestCheckoutState> {
-  logGuestFoundingCheckoutStage("validating_form");
+export async function startGuestMembershipCheckout(_state: GuestCheckoutState, formData: FormData): Promise<GuestCheckoutState> {
+  logGuestMembershipCheckoutStage("validating_form");
   const parsed = guestFoundingCheckoutSchema.safeParse({
     businessName: formData.get("businessName"), contactName: formData.get("contactName"), email: formData.get("email"),
     phone: formData.get("phone"), primaryServiceCategory: formData.get("primaryServiceCategory"),
   });
   if (!parsed.success) {
-    console.info("guest_founding_checkout_validation_failed", {
+    console.info("guest_membership_checkout_validation_failed", {
       stage: "validating_form",
       issueCodes: parsed.error.issues.map((issue) => issue.code),
       issuePaths: parsed.error.issues.map((issue) => issue.path.join(".")),
     });
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the required business details." };
   }
+  const planKey = normalizeVendorPlanKey(z.string().safeParse(formData.get("plan")).data ?? "");
+  const plan = planKey ? getVendorPlan(planKey) : undefined;
+  if (!plan) return { status: "error", message: "Choose a membership plan." };
   const email = parsed.data.email.toLowerCase();
   let checkoutUrl: string;
-  let stage: GuestFoundingCheckoutStage = "loading_configuration";
+  let stage: GuestMembershipCheckoutStage = "loading_configuration";
   let stripeApiCallAttempted = false;
   let stripeCheckoutSessionCreationAttempted = false;
   try {
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     const admin = createSupabaseAdminClient();
     const origin = await getAppOrigin();
     const stripe = getStripeClient();
 
     stage = "validating_price_product";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     const stripeConfiguration = {
-      productId: getVendorPlanProductId(FOUNDING_PARTNER_PLAN),
-      priceId: getVendorPlanPriceId(FOUNDING_PARTNER_PLAN),
+      productId: getVendorPlanProductId(plan),
+      priceId: getVendorPlanPriceId(plan),
     };
 
     stage = "database_lookup";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     const reservationPayload = {
       target_business_name: parsed.data.businessName, target_contact_name: parsed.data.contactName, target_contact_email: email,
       target_contact_phone: parsed.data.phone, target_primary_service_category: parsed.data.primaryServiceCategory,
-      target_price_id: stripeConfiguration.priceId, target_interval: FOUNDING_PARTNER_PLAN.interval,
-      target_amount_cents: FOUNDING_PARTNER_PLAN.amountCents, target_currency: FOUNDING_PARTNER_PLAN.currency,
+      target_plan_code: plan.code, target_price_id: stripeConfiguration.priceId, target_interval: plan.interval,
+      target_amount_cents: plan.amountCents, target_currency: plan.currency,
     };
 
     stage = "pending_membership_creation";
-    logGuestFoundingCheckoutStage(stage);
-    const { data: reservation, error: reservationError } = await admin.rpc("create_guest_founding_vendor_checkout", reservationPayload);
+    logGuestMembershipCheckoutStage(stage);
+    const { data: reservation, error: reservationError } = await admin.rpc("create_guest_vendor_membership_checkout", reservationPayload);
     const row = Array.isArray(reservation) ? reservation[0] : reservation;
     if (reservationError) throw asCheckoutError(stage, reservationError);
     if (!row) throw new Error("checkout reservation unavailable");
 
     stage = "constructing_checkout_session_payload";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     const customerPayload = { email, name: parsed.data.businessName, metadata: { guest_claim_id: row.claim_id, organization_id: row.vendor_organization_id } };
 
     stage = "creating_stripe_customer";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     stripeApiCallAttempted = true;
-    const customer = await stripe.customers.create(customerPayload, { idempotencyKey: `guest-founder-${row.claim_id}` });
+    const customer = await stripe.customers.create(customerPayload, { idempotencyKey: `guest-membership-${row.claim_id}` });
 
     stage = "constructing_checkout_session_payload";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     const checkoutPayload = {
-      planKey: FOUNDING_PARTNER_PLAN.key, organizationId: row.vendor_organization_id, membershipId: row.membership_id,
+      planKey: plan.key, organizationId: row.vendor_organization_id, membershipId: row.membership_id,
       guestClaimId: row.claim_id, customerId: customer.id, onboardingVersion: 1, checkoutAttemptNumber: row.checkout_attempt_number,
       successUrl: `${origin}/membership/claim?session_id={CHECKOUT_SESSION_ID}`, cancelUrl: `${origin}/founders?checkout=cancelled`,
     };
 
     stage = "creating_stripe_checkout_session";
-    logGuestFoundingCheckoutStage(stage);
+    logGuestMembershipCheckoutStage(stage);
     stripeCheckoutSessionCreationAttempted = true;
     const session = await createVendorMembershipCheckout(checkoutPayload);
 
     stage = "attaching_checkout_session";
-    logGuestFoundingCheckoutStage(stage);
-    const { error: attachError } = await admin.rpc("attach_guest_founding_vendor_checkout", { target_claim_id: row.claim_id, target_membership_id: row.membership_id, target_customer_id: customer.id, target_checkout_session_id: session.id });
+    logGuestMembershipCheckoutStage(stage);
+    const { error: attachError } = await admin.rpc("attach_guest_vendor_membership_checkout", { target_claim_id: row.claim_id, target_membership_id: row.membership_id, target_customer_id: customer.id, target_checkout_session_id: session.id });
     if (attachError) throw asCheckoutError(stage, attachError);
     checkoutUrl = session.url;
   } catch (error) {
-    logGuestFoundingCheckoutFailure(error, stage, stripeApiCallAttempted, stripeCheckoutSessionCreationAttempted);
+    logGuestMembershipCheckoutFailure(error, stage, stripeApiCallAttempted, stripeCheckoutSessionCreationAttempted);
     return { status: "error", message: "Secure checkout is temporarily unavailable. Please try again shortly." };
   }
   redirect(checkoutUrl);
 }
+
+export const startGuestFoundingPartnerCheckout = startGuestMembershipCheckout;
 
 export type OnboardingState = { status: "idle" | "error" | "success"; message?: string; fieldErrors?: Record<string, string> };
 
