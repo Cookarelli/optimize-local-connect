@@ -4,7 +4,7 @@ import { ArrowLeft, BadgeCheck, Banknote, CircleAlert, Clock3, CreditCard, Shiel
 import { redirect } from "next/navigation";
 import { FOUNDING_VENDOR_RESERVATION_SUMMARY } from "@/src/domain/founding-partner/reserved-spots";
 import { filterFounderEnrollments, founderSummary, isPaidFounder, type FounderDashboardFilters, type FounderEnrollment } from "@/src/domain/founding-vendors/dashboard";
-import { FOUNDING_PARTNER_PLAN } from "@/src/domain/vendor-memberships/catalog";
+import { FOUNDING_MEMBER_OFFER, FOUNDING_PARTNER_PLAN } from "@/src/domain/vendor-memberships/catalog";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
@@ -39,7 +39,7 @@ export default async function FoundingVendorsPage({ searchParams }: { searchPara
     ...(guestClaims ?? []).map(claim => { const membership = membershipById.get(claim.membership_id); return { id: `guest:${claim.id}`, businessName: "Guest Founder checkout", contactName: claim.contact_name, email: claim.purchaser_email, phone: claim.contact_phone, industry: claim.primary_service_category, source: "Guest Founder checkout", paymentStatus: claim.payment_status, membershipStatus: membership?.status ?? null, amountPaidCents: claim.payment_status === "paid" && membership?.currency === "USD" ? membership.amount_cents : 0, accountClaimed: Boolean(claim.claimed_by_user_id), createdAt: claim.created_at, updatedAt: claim.updated_at, activatedAt: membership?.status === "active" ? membership.updated_at : null, stripeCustomerId: claim.stripe_customer_id, checkoutSessionId: claim.stripe_checkout_session_id, paymentIntentId: null } as FounderEnrollment; }),
     ...(enrollments ?? []).filter(enrollment => !(guestClaims ?? []).some(claim => claim.membership_id === enrollment.membership_id)).map(enrollment => { const membership = membershipById.get(enrollment.membership_id); return { id: `enrollment:${enrollment.id}`, businessName: "Founder enrollment", contactName: enrollment.contact_name, email: enrollment.contact_email, phone: enrollment.contact_phone, industry: null, source: "Authenticated vendor enrollment", paymentStatus: membership?.status === "active" ? "paid" : enrollment.status === "payment_failed" ? "failed" : "pending", membershipStatus: membership?.status ?? null, amountPaidCents: membership?.status === "active" && membership.currency === "USD" ? membership.amount_cents : 0, accountClaimed: true, createdAt: enrollment.created_at, updatedAt: enrollment.updated_at, activatedAt: membership?.status === "active" ? membership.updated_at : null, stripeCustomerId: membership?.stripe_customer_id ?? null, checkoutSessionId: membership?.stripe_checkout_session_id ?? null, paymentIntentId: null } as FounderEnrollment; }),
   ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const capacity = FOUNDING_PARTNER_PLAN.capacity ?? 50;
+  const capacity = FOUNDING_PARTNER_PLAN.capacity ?? FOUNDING_MEMBER_OFFER.capacity;
   const occupied = founderMemberships.filter(membership => ["pending", "trialing", "active", "past_due", "complimentary", "manually_granted"].includes(membership.status)).length;
   const summary = founderSummary(rows, capacity, occupied);
   const visible = filterFounderEnrollments(rows, filters);

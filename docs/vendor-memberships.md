@@ -8,9 +8,9 @@ Vendor memberships are commercial marketplace products. They never grant organiz
 | --- | --- | --- |
 | Network Member | $19/month | Paid directory visibility, standard profile, and property-manager opportunities |
 | Preferred Vendor | $49/month | Enhanced placement, Preferred badge, Property Manager Perk, and expanded profile visibility |
-| Founding Partner | $299/year; maximum 50 | Founder badge, premium placement, Property Manager Perk, and core vendor-network access while eligible |
+| Founding Member | $499/year; maximum 25 (3 claimed, 22 remaining) | Founding Member badge, premium placement, Property Manager Perk, and core vendor-network access while eligible |
 
-The Founding Partner capacity is enforced transactionally against a locked membership-level row. New purchases use hosted Stripe Checkout in subscription mode with the recurring annual Price from `STRIPE_FOUNDING_VENDOR_PRICE_ID`. The first charge is immediate and renewal is automatic every 12 months until canceled. Historical Founding Fifty payments remain available only for explicit reconciliation.
+The Founding Member capacity is enforced transactionally against a locked membership-level row. New purchases use hosted Stripe Checkout in subscription mode with the recurring annual Price from `STRIPE_FOUNDING_MEMBER_PRICE_ID`. The first charge is immediate and renewal is automatic every 12 months until canceled. Historical Founding Fifty payments remain available only for explicit reconciliation.
 
 ## Entitlements and lifecycle
 

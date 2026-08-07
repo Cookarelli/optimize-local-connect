@@ -6,7 +6,7 @@ import { Logo } from "@/src/components/brand/logo";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Founding Partner payment status", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Legacy Founder payment status", robots: { index: false, follow: false } };
 
 const sessionSchema = z.string().regex(/^cs_(test_|live_)?[A-Za-z0-9]+$/);
 
@@ -44,16 +44,16 @@ export default async function FoundingPartnerSuccessPage({ searchParams }: { sea
       <div className="mb-8 flex justify-center"><Logo /></div>
       <section className="rounded-[2rem] border border-slate-200 bg-white p-7 text-center shadow-xl shadow-slate-950/5 sm:p-12">
         {paid ? <CheckCircle2 aria-hidden="true" className="mx-auto size-14 text-emerald-600" /> : invalid || lookupFailed ? <XCircle aria-hidden="true" className="mx-auto size-14 text-rose-600" /> : <Clock3 aria-hidden="true" className="mx-auto size-14 text-amber-600" />}
-        <p className="mt-7 text-xs font-black uppercase tracking-[.18em] text-emerald-700">Optimize Local Connect Founding Partner</p>
+        <p className="mt-7 text-xs font-black uppercase tracking-[.18em] text-emerald-700">Legacy Optimize Local Connect Founder payment</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-5xl">{paid ? "Payment confirmed." : invalid ? "We could not identify that checkout." : lookupFailed ? "We could not check your payment yet." : "Payment verification is in progress."}</h1>
         <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-600">{paid
-          ? "Stripe confirmed this $299 Founder payment directly to our server. Your pending Founding Partner record is ready for the next step."
+          ? "Stripe confirmed this historical $299 Founder payment directly to our server. Your pending Founding Partner record is ready for the next step."
           : invalid
-            ? "Return to the Founding Partner page to begin a new secure checkout. No payment status was inferred from this page address."
+            ? "Return to the current Founding Member page to begin a new secure checkout. No payment status was inferred from this page address."
             : lookupFailed
               ? "Your payment status was not changed. Please try again shortly; if payment completed, Stripe's verified notification remains the source of truth."
             : "Stripe may still be delivering the verified payment notification. Refresh this page in a moment. Your membership is not marked paid until our server processes that notification."}</p>
-        {paid && sessionId.success ? <div className="mt-9"><Link href={`/founders/onboarding/access?session_id=${encodeURIComponent(sessionId.data)}`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-6 text-sm font-black text-white hover:bg-emerald-700">Complete your business profile <ArrowRight aria-hidden="true" className="ml-2 size-4" /></Link><p className="mt-4 text-xs text-slate-500">Receipt email: {payment?.customer_email}</p></div> : <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><Link href={invalid ? "/founders" : sessionId.success ? `/founders/success?session_id=${encodeURIComponent(sessionId.data)}` : "/founders"} className="inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-6 text-sm font-black text-white hover:bg-emerald-700">{invalid ? "Return to Founding Partner offer" : "Refresh payment status"}</Link></div>}
+        {paid && sessionId.success ? <div className="mt-9"><Link href={`/founders/onboarding/access?session_id=${encodeURIComponent(sessionId.data)}`} className="inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-6 text-sm font-black text-white hover:bg-emerald-700">Complete your business profile <ArrowRight aria-hidden="true" className="ml-2 size-4" /></Link><p className="mt-4 text-xs text-slate-500">Receipt email: {payment?.customer_email}</p></div> : <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><Link href={invalid ? "/founders" : sessionId.success ? `/founders/success?session_id=${encodeURIComponent(sessionId.data)}` : "/founders"} className="inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-6 text-sm font-black text-white hover:bg-emerald-700">{invalid ? "View current Founding Member offer" : "Refresh payment status"}</Link></div>}
         <p className="mt-8 flex items-center justify-center gap-1.5 text-xs text-slate-400"><LockKeyhole aria-hidden="true" className="size-3.5" />This page reads the verified database record. The URL is never treated as proof of payment.</p>
       </section>
     </div>

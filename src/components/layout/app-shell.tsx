@@ -45,7 +45,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   return (
     <div className="min-h-dvh bg-slate-50">
       <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col border-r border-slate-200 bg-white px-4 py-5 lg:flex">
-        <div className="px-2"><Logo compact /></div>
+        <div className="px-2"><Logo className="[&_img]:w-[220px]" /></div>
         <div className="mt-8 rounded-2xl bg-slate-950 p-3.5 text-white">
           <p className="text-[10px] font-bold uppercase tracking-[.16em] text-emerald-400">{PROPERTY_MANAGEMENT_VERTICAL.name}</p>
           <p className="mt-1 truncate text-sm font-semibold">{activeMembership?.organizationName ?? "Platform operations"}</p>
@@ -70,7 +70,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
         </div>
       </aside>
       <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
-        <Logo compact />
+        <Logo className="[&_img]:w-[180px] sm:[&_img]:w-[220px]" />
         <details className="relative">
           <summary className="grid size-11 cursor-pointer list-none place-items-center rounded-xl border border-slate-200" aria-label="Open navigation"><Menu className="size-5" /></summary>
           <nav aria-label="Mobile application navigation" className="absolute right-0 top-13 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">

@@ -89,7 +89,7 @@ Relationship Continues
 
 ## Sales Milestones
 
-- 50 Founding Vendors
+- 25 Founding Members
 - 25 Property Managers
 - 500 Vendors
 - 100 Property Managers

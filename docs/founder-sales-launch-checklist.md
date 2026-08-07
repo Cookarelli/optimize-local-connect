@@ -1,6 +1,6 @@
 # Founding Partner sales launch checklist
 
-> Superseded on July 18, 2026: this document records the earlier one-payment implementation review. The canonical public offer is now a $299/year recurring subscription. Do not use the historical Checkout or launch steps below for a new sale; use the recurring membership instructions in `README.md`.
+> Superseded on July 18, 2026: this document records the earlier one-payment implementation review. The canonical public offer is now a $499/year recurring Founding Member subscription, limited to 25 members. Do not use the historical Checkout or launch steps below for a new sale; use the recurring membership instructions in `README.md`.
 
 Review date: July 18, 2026  
 Historical offer reviewed: Optimize Local Connect Founding Partner — $299 USD payment  

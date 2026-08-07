@@ -24,31 +24,31 @@ const guestClaimStatus = readFileSync(new URL("../app/api/membership/claim-statu
 
 test("vendor membership catalog exposes exactly the three recurring offers", () => {
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.key), ["founding_partner","preferred","network"]);
-  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.name), ["Founder","Preferred","Network"]);
+  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => plan.name), ["Founding Member","Preferred","Network"]);
   assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "network")?.amountCents, 1900);
   assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "preferred")?.amountCents, 4900);
-  assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "founding_partner")?.capacity, 50);
+  assert.equal(VENDOR_MEMBERSHIP_PLANS.find(plan => plan.key === "founding_partner")?.capacity, 25);
   assert.ok(VENDOR_MEMBERSHIP_PLANS.every(plan=>plan.paymentRequired&&plan.manualApprovalRequired&&plan.publicationEligible&&plan.publiclyPurchasable));
-  assert.equal(FOUNDING_PARTNER_PLAN.name, "Founder");
-  assert.equal(FOUNDING_PARTNER_PLAN.amountCents, 29900);
+  assert.equal(FOUNDING_PARTNER_PLAN.name, "Founding Member");
+  assert.equal(FOUNDING_PARTNER_PLAN.amountCents, 49900);
   assert.equal(FOUNDING_PARTNER_PLAN.currency, "USD");
   assert.equal(FOUNDING_PARTNER_PLAN.interval, "year");
   assert.equal(FOUNDING_PARTNER_PLAN.checkoutMode, "subscription");
-  assert.equal(FOUNDING_PARTNER_PLAN.stripeProductEnv, "STRIPE_FOUNDING_PRODUCT_ID");
-  assert.equal(FOUNDING_PARTNER_PLAN.stripePriceEnv, "STRIPE_FOUNDING_VENDOR_PRICE_ID");
-  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$299/year");
+  assert.equal(FOUNDING_PARTNER_PLAN.stripeProductEnv, "STRIPE_FOUNDING_MEMBER_PRODUCT_ID");
+  assert.equal(FOUNDING_PARTNER_PLAN.stripePriceEnv, "STRIPE_FOUNDING_MEMBER_PRICE_ID");
+  assert.equal(formatVendorPlanPrice(FOUNDING_PARTNER_PLAN), "$499/year");
   assert.ok(VENDOR_MEMBERSHIP_PLANS.every(plan => plan.checkoutMode === "subscription" && plan.interval !== null && plan.renewal.behavior === "same_stripe_price"));
 });
 
 test("every publicly purchasable paid tier requires a distinct Stripe Product and Price", () => {
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan=>[plan.key,plan.stripeProductEnv,plan.stripePriceEnv]),[
-    ["founding_partner","STRIPE_FOUNDING_PRODUCT_ID","STRIPE_FOUNDING_VENDOR_PRICE_ID"],
+    ["founding_partner","STRIPE_FOUNDING_MEMBER_PRODUCT_ID","STRIPE_FOUNDING_MEMBER_PRICE_ID"],
     ["preferred","STRIPE_PREFERRED_PRODUCT_ID","STRIPE_PREFERRED_VENDOR_PRICE_ID"],
     ["network","STRIPE_NETWORK_PRODUCT_ID","STRIPE_NETWORK_MEMBER_PRICE_ID"],
   ]);
   const configured = validatePurchasableVendorPlanStripeConfig({
-    STRIPE_FOUNDING_PRODUCT_ID:"prod_founder",
-    STRIPE_FOUNDING_VENDOR_PRICE_ID:"price_founder",
+    STRIPE_FOUNDING_MEMBER_PRODUCT_ID:"prod_founding_member",
+    STRIPE_FOUNDING_MEMBER_PRICE_ID:"price_founding_member",
     STRIPE_NETWORK_PRODUCT_ID:"prod_network",
     STRIPE_NETWORK_MEMBER_PRICE_ID:"price_network",
     STRIPE_PREFERRED_PRODUCT_ID:"prod_preferred",
@@ -57,7 +57,7 @@ test("every publicly purchasable paid tier requires a distinct Stripe Product an
   assert.deepEqual(configured.map(item=>item.key),["founding_partner","preferred","network"]);
   assert.equal(new Set(configured.map(item=>item.productId)).size,configured.length);
   assert.equal(new Set(configured.map(item=>item.priceId)).size,configured.length);
-  assert.throws(()=>validatePurchasableVendorPlanStripeConfig({}),/STRIPE_FOUNDING_PRODUCT_ID/);
+  assert.throws(()=>validatePurchasableVendorPlanStripeConfig({}),/STRIPE_FOUNDING_MEMBER_PRODUCT_ID/);
 });
 
 test("guest checkout uses the selected canonical plan for Stripe and membership metadata", () => {
@@ -71,7 +71,7 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
 });
 
 test("public membership page presents every plan and preselects it for guest checkout", () => {
-  for (const offer of ["Founder", "Preferred", "Network", "$299/year", "$49/month", "$19/month", "Founder Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
+  for (const offer of ["Founding Member", "Preferred", "Network", "founderPrice", "$49/month", "$19/month", "Founding Member Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
   assert.match(membershipsPage, /memberships\?plan=\$\{plan\.key\}#checkout/);
   assert.match(membershipsPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
   assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);

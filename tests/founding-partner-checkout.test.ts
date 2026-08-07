@@ -72,6 +72,8 @@ test("database payment and onboarding writes are idempotent and duplicate-safe",
 });
 
 test("success page reads verified database state instead of trusting the session query", () => {
+  assert.match(successPage, /Legacy Founder payment status/);
+  assert.match(successPage, /historical \$299 Founder payment/);
   assert.match(successPage, /from\("founding_partner_payments"\)/);
   assert.match(successPage, /payment_status === "paid"/);
   assert.match(successPage, /amount_paid_cents === 29900/);
@@ -83,7 +85,7 @@ test("public Founder enrollment remains a guest checkout entry point", () => {
   assert.match(checkoutAction, /startGuestMembershipCheckout/);
   assert.match(checkoutAction, /startGuestFoundingPartnerCheckout/);
   assert.doesNotMatch(checkoutAction, /getCurrentUser|\/sign-in\?next=/);
-  assert.match(foundersPage, /annual membership/i);
+  assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
   assert.match(successPage, /lookupFailed/);
   assert.match(successPage, /Your payment status was not changed/);
 });

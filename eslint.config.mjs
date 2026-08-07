@@ -5,10 +5,16 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
+  // Keep lint focused on maintained source, not framework and build artifacts.
   globalIgnores([
-    // Default ignores of eslint-config-next:
+    "node_modules/**",
     ".next/**",
+    ".output/**",
+    ".vinext/**",
+    ".wrangler/**",
+    ".vercel/**",
+    "coverage/**",
+    "dist/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

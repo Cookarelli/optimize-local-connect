@@ -5,7 +5,7 @@ export type FounderEnrollment = {
 export type FounderDashboardFilters = { q?: string; status?: string; industry?: string };
 
 export function isActiveFounder(enrollment: FounderEnrollment) { return enrollment.membershipStatus === "active"; }
-export function isPaidFounder(enrollment: FounderEnrollment) { return enrollment.paymentStatus === "paid" && enrollment.amountPaidCents === 29900; }
+export function isPaidFounder(enrollment: FounderEnrollment) { return enrollment.paymentStatus === "paid" && enrollment.amountPaidCents > 0; }
 export function isUnclaimedFounder(enrollment: FounderEnrollment) { return enrollment.accountClaimed === false; }
 
 export function filterFounderEnrollments(rows: FounderEnrollment[], filters: FounderDashboardFilters) {

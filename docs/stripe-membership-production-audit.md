@@ -1,6 +1,6 @@
 # Stripe, memberships, entitlements, and Property Manager Perk production audit
 
-> Historical pre-change audit. Its one-time-versus-annual conflict has been resolved in favor of the $299/year recurring Founding Partner subscription. Remaining production configuration findings are still relevant until separately verified.
+> Historical pre-change audit retained for record only. Its one-time-versus-annual conflict has been resolved in favor of the $499/year recurring Founding Member subscription, limited to 25 members. Do not use the route, product, or configuration findings below as current implementation guidance; use `README.md` and `docs/vendor-memberships.md`.
 
 Audit date: 2026-07-18  
 Production origin: `https://optimizelocalai.com`  
@@ -32,7 +32,7 @@ These are direct platform revenue. Stripe Connect is not involved and the 3% mar
 |---|---|---|---|---|
 | Direct Founding Partner | `/founders` → `startFoundingPartnerCheckout` | One-time Checkout `payment` | Signed standard webhook plus retrieved Checkout Session and PaymentIntent | `founding_partner_checkout_attempts`, `founding_partner_payments`, one `founding_partner_onboardings` |
 | Legacy Founding Fifty claim | `/founding-fifty/claim/[seatId]` | One-time Checkout `payment` | Signed standard webhook plus retrieved Checkout Session | `founding_claims`, `founding_payment_events`, then governed membership activation |
-| Founding Vendor | `/vendor/membership` | Recurring Checkout `subscription`, $299/year | Signed standard webhook plus current Subscription retrieval | `vendor_billing_customers`, `vendor_memberships`, `vendor_membership_provider_events` |
+| Founding Member | `/vendor/membership` | Recurring Checkout `subscription`, $499/year | Signed standard webhook plus current Subscription retrieval | `vendor_billing_customers`, `vendor_memberships`, `vendor_membership_provider_events` |
 | Network Member | `/vendor/membership` | Recurring Checkout `subscription`, $19/month | Same | Same |
 | Preferred Vendor | `/vendor/membership` | Recurring Checkout `subscription`, $49/month | Same | Same |
 | Billing management | `/vendor/membership` | Stripe Customer Portal | Authenticated organization role plus stored Customer mapping | Stripe remains billing authority; webhooks synchronize changes |
@@ -103,7 +103,7 @@ All read the raw request body before verification. Missing server configuration 
 
 | Public plan | Canonical key | Existing DB code | Price |
 |---|---|---|---|
-| Founding Vendor | `founding_vendor` | `founding_partner` | $299/year |
+| Founding Member | `founding_vendor` | `founding_partner` | $499/year |
 | Network Member | `network_member` | `network_member` | $19/month |
 | Preferred Vendor | `preferred_vendor` | `premium` | $49/month |
 
@@ -217,7 +217,8 @@ Migration `022` is corrective and additive. It does not rewrite already-applied 
 - `STRIPE_SECRET_KEY` — server-only secret.
 - `STRIPE_WEBHOOK_SECRET` — server-only standard billing endpoint secret.
 - `STRIPE_FOUNDING_PRODUCT_ID` — server-only configuration for the legacy/direct $299 Product.
-- `STRIPE_FOUNDING_VENDOR_PRICE_ID` — server-only $299/year recurring Price.
+- `STRIPE_FOUNDING_MEMBER_PRODUCT_ID` — server-only Product for the active $499/year recurring Founding Member subscription.
+- `STRIPE_FOUNDING_MEMBER_PRICE_ID` — server-only $499/year recurring Price.
 - `STRIPE_NETWORK_MEMBER_PRICE_ID` — server-only $19/month recurring Price.
 - `STRIPE_PREFERRED_VENDOR_PRICE_ID` — server-only $49/month recurring Price.
 
@@ -231,7 +232,7 @@ Migration `022` is corrective and additive. It does not rewrite already-applied 
 
 Configured by name: `NEXT_PUBLIC_APP_URL`, the three Supabase variables, `STRIPE_SECRET_KEY`, and all three Connect variables.
 
-Missing by name: `STRIPE_WEBHOOK_SECRET`, `STRIPE_FOUNDING_PRODUCT_ID`, `STRIPE_FOUNDING_VENDOR_PRICE_ID`, `STRIPE_NETWORK_MEMBER_PRICE_ID`, and `STRIPE_PREFERRED_VENDOR_PRICE_ID`.
+Historical audit finding: `STRIPE_WEBHOOK_SECRET`, `STRIPE_FOUNDING_PRODUCT_ID`, `STRIPE_NETWORK_MEMBER_PRICE_ID`, and `STRIPE_PREFERRED_VENDOR_PRICE_ID` were absent at the time. The active Founding Member variables are `STRIPE_FOUNDING_MEMBER_PRODUCT_ID` and `STRIPE_FOUNDING_MEMBER_PRICE_ID`.
 
 ## Stripe Dashboard inspection
 
@@ -285,7 +286,7 @@ Do not use real cards until the complete sandbox sequence passes.
 4. Add the standard billing webhook destination and seven required events.
 5. Create or invite a test vendor organization and owner account.
 6. Visit `/pricing`, select Founding Vendor, sign in, and confirm the intended plan remains selected.
-7. Start Checkout from `/vendor/membership`; confirm Stripe shows $299 USD per year and no application fee/connected-account transfer.
+7. Start Checkout from `/vendor/membership`; confirm Stripe shows $499 USD per year and no application fee/connected-account transfer.
 8. Pay with Stripe test card `4242 4242 4242 4242`.
 9. Confirm the success page remains processing until the signed webhook updates the database.
 10. Confirm exactly one `vendor_memberships` row contains the Stripe Customer, Checkout Session, Subscription, Price, 29,900-cent amount, USD currency, annual interval, status, and next billing date.

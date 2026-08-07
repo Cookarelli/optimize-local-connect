@@ -11,8 +11,8 @@ export type VendorMembershipPlan = {
   currency: "USD";
   interval: "month" | "year" | null;
   checkoutMode: "subscription";
-  stripeProductEnv: "STRIPE_FOUNDING_PRODUCT_ID" | "STRIPE_NETWORK_PRODUCT_ID" | "STRIPE_PREFERRED_PRODUCT_ID";
-  stripePriceEnv: "STRIPE_FOUNDING_VENDOR_PRICE_ID" | "STRIPE_NETWORK_MEMBER_PRICE_ID" | "STRIPE_PREFERRED_VENDOR_PRICE_ID";
+  stripeProductEnv: "STRIPE_FOUNDING_MEMBER_PRODUCT_ID" | "STRIPE_NETWORK_PRODUCT_ID" | "STRIPE_PREFERRED_PRODUCT_ID";
+  stripePriceEnv: "STRIPE_FOUNDING_MEMBER_PRICE_ID" | "STRIPE_NETWORK_MEMBER_PRICE_ID" | "STRIPE_PREFERRED_VENDOR_PRICE_ID";
   description: string;
   features: readonly string[];
   entitlements: { directory: boolean; propertyManagerPerk: boolean; opportunities: boolean; dashboard: boolean; preferredPlacement: boolean; founderBadge: boolean };
@@ -26,14 +26,25 @@ export type VendorMembershipPlan = {
   publiclyPurchasable: boolean;
 };
 
+export const FOUNDING_MEMBER_OFFER = {
+  name: "Founding Member",
+  annualPriceCents: 49_900,
+  capacity: 25,
+  claimed: 3,
+  monthlyEquivalentCents: 4_158,
+  monthlyComparison: "Less than $42/month when paid annually.",
+  cta: "Claim Your Founding Spot",
+  get remaining() { return this.capacity - this.claimed; },
+} as const;
+
 export const VENDOR_MEMBERSHIP_PLANS: readonly VendorMembershipPlan[] = [
-  { key:"founding_partner",code:"founding_partner",name:"Founder",amountCents:29900,currency:"USD",interval:"year",checkoutMode:"subscription",stripeProductEnv:"STRIPE_FOUNDING_PRODUCT_ID",stripePriceEnv:"STRIPE_FOUNDING_VENDOR_PRICE_ID",description:"Annual Founder membership with premium visibility for early Rockford-area vendors.",features:["Founder badge","Premium placement","Property Manager Perk","Core vendor-network access"],entitlements:{directory:true,propertyManagerPerk:true,opportunities:true,dashboard:true,preferredPlacement:true,founderBadge:true},badge:"founder",placementPriority:30,capacity:50,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
+  { key:"founding_partner",code:"founding_partner",name:FOUNDING_MEMBER_OFFER.name,amountCents:FOUNDING_MEMBER_OFFER.annualPriceCents,currency:"USD",interval:"year",checkoutMode:"subscription",stripeProductEnv:"STRIPE_FOUNDING_MEMBER_PRODUCT_ID",stripePriceEnv:"STRIPE_FOUNDING_MEMBER_PRICE_ID",description:"A full year of premium local visibility and network access for early Rockford-area vendors.",features:["Founding Member badge","Premium placement","Property Manager Perk","Full-year local visibility and network access"],entitlements:{directory:true,propertyManagerPerk:true,opportunities:true,dashboard:true,preferredPlacement:true,founderBadge:true},badge:"founder",placementPriority:30,capacity:FOUNDING_MEMBER_OFFER.capacity,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
   { key:"preferred",code:"preferred",name:"Preferred",amountCents:4900,currency:"USD",interval:"month",checkoutMode:"subscription",stripeProductEnv:"STRIPE_PREFERRED_PRODUCT_ID",stripePriceEnv:"STRIPE_PREFERRED_VENDOR_PRICE_ID",description:"Enhanced marketplace visibility for vendors ready to build repeat property-manager relationships.",features:["Enhanced placement","Preferred badge","Property Manager Perk","Expanded profile and visibility"],entitlements:{directory:true,propertyManagerPerk:true,opportunities:true,dashboard:true,preferredPlacement:true,founderBadge:false},badge:"preferred",placementPriority:20,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
   { key:"network",code:"network",name:"Network",amountCents:1900,currency:"USD",interval:"month",checkoutMode:"subscription",stripeProductEnv:"STRIPE_NETWORK_PRODUCT_ID",stripePriceEnv:"STRIPE_NETWORK_MEMBER_PRICE_ID",description:"A paid business profile and access to the local property-management network.",features:["Paid directory visibility","Standard business profile","Property-manager opportunities"],entitlements:{directory:true,propertyManagerPerk:false,opportunities:true,dashboard:true,preferredPlacement:false,founderBadge:false},badge:null,placementPriority:10,renewal:{behavior:"same_stripe_price",configurable:true},paymentRequired:true,manualApprovalRequired:true,publicationEligible:true,publiclyPurchasable:true},
 ] as const;
 
 export const FOUNDING_PARTNER_PLAN = VENDOR_MEMBERSHIP_PLANS[0];
-export const FOUNDING_PARTNER_RENEWAL_DISCLOSURE = "Your Founder membership renews annually at $299 unless you cancel before the renewal date.";
+export const FOUNDING_PARTNER_RENEWAL_DISCLOSURE = `Your ${FOUNDING_MEMBER_OFFER.name} membership renews annually at $${FOUNDING_MEMBER_OFFER.annualPriceCents / 100} unless you cancel before the renewal date.`;
 
 export function formatVendorPlanPrice(plan: VendorMembershipPlan) {
   return `$${plan.amountCents / 100}${plan.interval ? `/${plan.interval}` : ""}`;

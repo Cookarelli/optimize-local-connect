@@ -15,39 +15,35 @@ const vendorMembershipPage = readFileSync(new URL("../app/(platform)/vendor/memb
 const legacyFoundersPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
 const legacyFoundersClaimPage = readFileSync(new URL("../app/founding-fifty/claim/[seatId]/page.tsx", import.meta.url), "utf8");
 
-test("homepage exposes a direct Founding Vendor enrollment CTA above the fold", () => {
-  assert.match(homepage, /Become a Founding Vendor/);
-  assert.match(homepage, /Founding Vendor Enrollment Now Open/);
+test("homepage exposes a direct Founding Member enrollment CTA above the fold", () => {
+  assert.match(homepage, /FOUNDING_MEMBER_OFFER\.cta/);
+  assert.match(homepage, /Founding Member Enrollment Now Open/);
   assert.match(homepage, /ArrowLink href="\/founders"/);
-  assert.match(homepage, /ArrowLink href="\/founders">Become a Founding Vendor/);
+  assert.match(homepage, /ArrowLink href="\/founders">\{FOUNDING_MEMBER_OFFER\.cta\}/);
   assert.match(homepage, /Vendor Login/);
   assert.match(homepage, /Staff Login/);
-  assert.match(homepage, /FOUNDING_VENDOR_RESERVATION_SUMMARY/);
-  assert.match(homepage, /FOUNDING_VENDOR_RESERVED_CATEGORIES/);
-  assert.match(homepage, /Become a Founding Vendor<\/ArrowLink>/);
+  assert.match(homepage, /FoundingMemberAvailability className="mb-7 max-w-2xl" ctaHref="\/founders"/);
+  assert.match(homepage, /\{FOUNDING_MEMBER_OFFER\.cta\}<\/ArrowLink>/);
 });
 
 test("Founder enrollment CTAs use the public guest checkout route", () => {
-  assert.match(pricingPage, /founding\?"\/founders"/);
-  assert.match(vendorMembershipPage, /plan\.key==="founding_partner"\?<Link href="\/founders"/);
-  assert.match(legacyFoundersPage, /redirect\("\/founders"\)/);
-  assert.match(legacyFoundersClaimPage, /redirect\("\/founders"\)/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/founders"/);
+  assert.match(vendorMembershipPage, /founding\?<Link href="\/founders"/);
+  assert.match(legacyFoundersPage, /redirect\("\/memberships"\)/);
+  assert.match(legacyFoundersClaimPage, /redirect\("\/memberships"\)/);
   assert.doesNotMatch(pricingPage, /founding\?`?\/sign-in/);
 });
 
-test("the Founder page shows the current reserved-spot counter and categories", () => {
-  assert.match(foundersPage, /FOUNDING_VENDOR_RESERVATION_SUMMARY/);
-  assert.match(foundersPage, /FOUNDING_VENDOR_RESERVED_CATEGORIES/);
-  assert.match(foundersPage, /category} occupied/);
-  assert.match(foundersPage, /renews annually|per year|Annual membership/i);
+test("the Founders route forwards visitors to the current membership offer", () => {
+  assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
 });
 
-test("Founding Vendor enrollment is public and server-controlled", () => {
-  assert.match(foundersPage, /GuestFoundingCheckoutForm/);
+test("Founding Member enrollment is public and server-controlled", () => {
+  assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
   assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
   assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.doesNotMatch(foundersAction, /requireUser\(|getCurrentUser\(/);
-  assert.match(pricingPage, /founding\?"\/founders"/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/founders"/);
 });
 
 test("guest checkout validation failures log Zod issue categories without customer values", () => {

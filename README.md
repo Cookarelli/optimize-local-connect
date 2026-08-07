@@ -58,20 +58,20 @@ npm run build
 
 ## Founding Partner Stripe checkout development
 
-The canonical `/founders` offer is a **$299/year recurring subscription**. The first charge is collected immediately in hosted Stripe Checkout and the subscription renews automatically every 12 months until canceled. The public CTA sends the customer through sign-in to the vendor membership flow; the server selects the configured annual Price and uses Stripe Checkout `subscription` mode. Only signed Stripe webhooks update membership status.
+The canonical `/founders` offer is a **$499/year recurring Founding Member subscription**, limited to 25 total members. The public presentation currently shows 3 claimed and 22 remaining. The first charge is collected immediately in hosted Stripe Checkout and the subscription renews automatically every 12 months until canceled. The public CTA sends the customer through sign-in to the vendor membership flow; the server selects the configured annual Price and uses Stripe Checkout `subscription` mode. Only signed Stripe webhooks update membership status.
 
 Add these server-side values to `.env.local`:
 
 ```bash
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_FOUNDING_PRODUCT_ID=prod_...
-STRIPE_FOUNDING_VENDOR_PRICE_ID=price_...
+STRIPE_FOUNDING_MEMBER_PRODUCT_ID=prod_...
+STRIPE_FOUNDING_MEMBER_PRICE_ID=price_...
 ```
 
 - `STRIPE_SECRET_KEY` is the Stripe test-mode secret key. Never prefix it with `NEXT_PUBLIC_` or expose it in browser code.
 - `STRIPE_WEBHOOK_SECRET` is printed by the local Stripe listener. It is different from the Dashboard endpoint secret.
-- `STRIPE_FOUNDING_PRODUCT_ID` and `STRIPE_FOUNDING_VENDOR_PRICE_ID` identify the Stripe Product and recurring annual Price for **Optimize Local Connect Founding Partner**: 29,900 cents, USD, yearly. IDs are never hardcoded in source.
+- `STRIPE_FOUNDING_MEMBER_PRODUCT_ID` and `STRIPE_FOUNDING_MEMBER_PRICE_ID` identify the Stripe Product and recurring annual Price for **Optimize Local Connect Founding Member**: 49,900 cents, USD, yearly. IDs are never hardcoded in source. The server retrieves and validates the Product, Price, amount, currency, and yearly interval before opening Checkout.
 - `NEXT_PUBLIC_APP_URL` must be `http://localhost:3000` locally and the canonical HTTPS origin in production.
 - The existing Supabase URL, anon key, and server-only service-role key are also required because checkout capacity, payments, and onboarding are persisted in Supabase.
 
@@ -99,15 +99,15 @@ order by vm.created_at desc
 limit 10;
 ```
 
-A successful test shows `active`, `29900`, `USD`, `year`, `founding_partner`, and one Stripe subscription ID. Re-delivering the same event must not create another membership or provider-event row.
+A successful test shows `active`, `49900`, `USD`, `year`, `founding_partner`, and one Stripe subscription ID. Re-delivering the same event must not create another membership or provider-event row.
 
 ## Recurring vendor memberships
 
 Apply `202607180021_vendor_subscription_memberships.sql` and then the additive corrective migration `202607180022_stripe_membership_reconciliation.sql` after the Founder, Connect, and Property Manager Perk migrations. Create three recurring Products and Prices on the Stripe platform account and configure:
 
 ```bash
-STRIPE_FOUNDING_PRODUCT_ID=prod_...
-STRIPE_FOUNDING_VENDOR_PRICE_ID=price_...   # $299 USD recurring yearly
+STRIPE_FOUNDING_MEMBER_PRODUCT_ID=prod_...
+STRIPE_FOUNDING_MEMBER_PRICE_ID=price_...   # $499 USD recurring yearly
 STRIPE_NETWORK_PRODUCT_ID=prod_...
 STRIPE_NETWORK_MEMBER_PRICE_ID=price_...    # $19 USD recurring monthly
 STRIPE_PREFERRED_PRODUCT_ID=prod_...
@@ -128,7 +128,7 @@ invoice.payment_failed
 
 Enable and configure the Stripe Customer Portal for subscription cancellation, payment-method updates, and invoices. Portal plan switching should remain disabled until a deliberate plan-change workflow and Founder-designation policy are approved. The portal return URL is created server-side from `NEXT_PUBLIC_APP_URL`.
 
-Historical $299 Founder payments remain authoritative in `founding_partner_payments` for reconciliation. They are not the canonical public offer and must not be silently converted into subscriptions or charged again. New Founding Partner purchases use the annual Stripe Price. Founder benefits remain attached while the membership is active, trialing, or in the time-bounded `past_due` billing grace state.
+Historical $299 Founder payments remain authoritative in `founding_partner_payments` for reconciliation. They are not the canonical public offer and must not be silently converted into subscriptions or charged again. New Founding Member purchases use `STRIPE_FOUNDING_MEMBER_PRICE_ID`; existing subscriptions retain their own Stripe Price and are never modified by this checkout flow. Founder benefits remain attached while the membership is active, trialing, or in the time-bounded `past_due` billing grace state.
 
 A Super Admin may reconcile a legitimate older Payment Link or Checkout purchase from `/admin/founders` by entering its `cs_...` Checkout Session ID. The server retrieves the session directly from Stripe and requires the configured Founder Product, one paid $299 USD line item, a successful matching PaymentIntent, and a Stripe Customer. Reconciliation creates only the payment and onboarding records; it does not activate directory access before review. Email alone is never accepted.
 
