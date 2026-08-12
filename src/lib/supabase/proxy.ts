@@ -7,7 +7,6 @@ const PROTECTED_PREFIXES = [
   "/accept-invite",
   "/dashboard",
   "/manager",
-  "/marketplace",
   "/onboarding",
   "/properties",
   "/requests",

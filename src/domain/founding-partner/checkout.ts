@@ -1,4 +1,5 @@
 export const FOUNDING_PARTNER_MEMBERSHIP_TYPE = "founding_partner";
+// Historical $299 reconciliation must retain the original Stripe descriptor.
 export const FOUNDING_PARTNER_PRODUCT_NAME = "Optimize Local Connect Founding Partner";
 export const FOUNDING_PARTNER_AMOUNT_CENTS = 29_900;
 export const FOUNDING_PARTNER_CURRENCY = "USD";

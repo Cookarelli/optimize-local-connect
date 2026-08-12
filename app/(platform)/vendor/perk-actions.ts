@@ -44,5 +44,5 @@ export async function updatePropertyManagerPerk(_state: PerkActionState, formDat
   }
   revalidatePath("/vendor");
   revalidatePath("/marketplace");
-  return { status: "success", message: perk.enabled ? "Property Manager Perk saved and enabled." : "Property Manager Perk saved and disabled." };
+  return { status: "success", message: perk.enabled ? "Connect Member Benefit saved and enabled." : "Connect Member Benefit saved and disabled." };
 }

@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 const cards=[
   ["Service Requests","Review and manually assign property-manager opportunities.","/admin/service-requests",ClipboardList],
   ["Vendor Pipeline","Manage outbound vendor recruiting prospects.","/admin/vendor-pipeline",Users],
-  ["Founding Vendors","Review Founder enrollment and membership status.","/admin/founding-vendors",Store],
+  ["Founding Members","Review Founder enrollment and membership status.","/admin/founding-vendors",Store],
   ["Property Manager Request Entry","Submit a service request from the property-manager workspace.","/property-manager/service-requests",Building2],
   ["Vendor Opportunities","View the assigned-vendor opportunity experience.","/vendor/opportunities",Store],
   ["Vendor Dashboard Demo","Open the sales demonstration dashboard.","/demo/vendor-dashboard",Building2],

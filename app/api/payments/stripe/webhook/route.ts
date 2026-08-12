@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         verification_status: "rejected",
         payload: parsedBody,
       }, { onConflict: "provider,provider_event_id", ignoreDuplicates: true });
-      return NextResponse.json({ error: "Checkout Session did not match the Founding Partner offer" }, { status: 400 });
+      return NextResponse.json({ error: "Checkout Session did not match the Founding Member offer" }, { status: 400 });
     }
     const { error } = await admin.rpc("process_founding_partner_payment", {
       target_event_id: event.id,

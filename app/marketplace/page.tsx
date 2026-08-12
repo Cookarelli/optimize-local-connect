@@ -4,10 +4,10 @@ import { VendorMarketplaceDirectory, type MarketplaceDirectoryParams } from "@/s
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Local Vendor Marketplace",
-  description: "Browse paid, approved, active Optimize Local Connect Founding Partners by service category and service area.",
+  title: "Local Business Network",
+  description: "Explore approved, active local business profiles by category and service area in the Optimize Local Connect network.",
   alternates: { canonical: "/marketplace" },
-  openGraph: { title: "Optimize Local Connect Vendor Marketplace", description: "Find approved local home-service Founding Partners and contact them directly.", url: "/marketplace", type: "website" },
+  openGraph: { title: "Explore the Optimize Local Connect Network", description: "Find approved local businesses by service and location, review business-provided details, and contact them directly.", url: "/marketplace", type: "website" },
 };
 
 export default async function MarketplacePage({ searchParams }: { searchParams: Promise<MarketplaceDirectoryParams> }) {

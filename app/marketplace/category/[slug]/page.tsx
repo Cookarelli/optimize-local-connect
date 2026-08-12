@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return { title: "Marketplace Category" };
   const name = await categoryName(slug);
-  return { title: `${name} Providers`, description: `Browse approved Optimize Local Connect Founding Partners offering ${name.toLowerCase()} services in local communities.`, alternates: { canonical: `/marketplace/category/${slug}` }, openGraph: { title: `${name} Providers | Optimize Local Connect`, description: `Find active local ${name.toLowerCase()} providers and contact them directly.`, url: `/marketplace/category/${slug}`, type: "website" } };
+  return { title: `${name} Providers`, description: `Browse approved, active businesses offering ${name.toLowerCase()} services in the Optimize Local Connect network.`, alternates: { canonical: `/marketplace/category/${slug}` }, openGraph: { title: `${name} Providers | Optimize Local Connect`, description: `Find active local ${name.toLowerCase()} providers, review their profile details, and contact them directly.`, url: `/marketplace/category/${slug}`, type: "website" } };
 }
 
 export default async function MarketplaceCategoryPage({ params, searchParams }: Props) {

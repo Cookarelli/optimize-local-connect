@@ -1,12 +1,4 @@
-import { FOUNDING_MEMBER_OFFER } from "@/src/domain/vendor-memberships/catalog";
-
-export const FOUNDING_VENDOR_SPOT_CAPACITY = FOUNDING_MEMBER_OFFER.capacity;
-
-export const FOUNDING_VENDOR_RESERVED_CATEGORIES = [
-  "HVAC",
-  "Electrician",
-  "Appliance Repair",
-] as const;
-
-export const FOUNDING_VENDOR_SPOTS_RESERVED = FOUNDING_VENDOR_RESERVED_CATEGORIES.length;
-export const FOUNDING_VENDOR_RESERVATION_SUMMARY = `${FOUNDING_MEMBER_OFFER.claimed} claimed. Only ${FOUNDING_MEMBER_OFFER.remaining} remaining.`;
+// Public messaging must never infer occupancy from showcase categories. The
+// authoritative count comes from vendor_memberships joined to the
+// founding_partner level in the admin view and the checkout reservation RPC.
+export const FOUNDING_VENDOR_RESERVATION_SUMMARY = "No separate showcase or hardcoded reservation count is included in Founder capacity.";

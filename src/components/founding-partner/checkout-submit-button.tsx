@@ -18,7 +18,7 @@ export function CheckoutSubmitButton({ light = false, compact = false }: { light
     >
       {pending ? <LoaderCircle aria-hidden="true" className="mr-2 size-4 animate-spin" /> : null}
       {compact ? <span className="sm:hidden">{pending ? "Opening…" : `Join · ${founderPrice}`}</span> : null}
-      <span className={compact ? "hidden sm:inline" : ""}>{pending ? "Opening secure checkout…" : "Become a Founding Partner"}</span>
+      <span className={compact ? "hidden sm:inline" : ""}>{pending ? "Opening secure checkout…" : "Become a Founding Member"}</span>
       {!pending ? <ArrowRight aria-hidden="true" className="ml-2 size-4" /> : null}
     </button>
   );

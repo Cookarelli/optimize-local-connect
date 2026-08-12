@@ -4,9 +4,9 @@ import { readFileSync } from "node:fs";
 import { COMPANY_VALUES, PLATFORM_BRAND } from "../src/domain/platform/brand";
 
 test("company philosophy centers local economic impact", () => {
-  assert.match(PLATFORM_BRAND.philosophy, /AI-powered technology/);
+  assert.match(PLATFORM_BRAND.philosophy, /connecting people and organizations with trusted businesses/);
   assert.match(PLATFORM_BRAND.philosophy, /keep more money local/);
-  assert.match(PLATFORM_BRAND.philosophy, /measurable economic impact/);
+  assert.match(PLATFORM_BRAND.philosophy, /more informed over time/);
 });
 
 test("company values are distinct and actionable", () => {
@@ -29,22 +29,34 @@ test("public messaging reflects the launch network and relationship-driven posit
   const membershipsPage = readFileSync(new URL("../app/memberships/page.tsx", import.meta.url), "utf8");
   const demoPage = readFileSync(new URL("../app/demo/vendor-dashboard/page.tsx", import.meta.url), "utf8");
   const publicSource = [homePage, companyPage, membershipsPage, demoPage].join("\n");
-  assert.match(homePage, /Founding Member Enrollment Now Open/);
-  assert.match(homePage, /Dependable local vendors/);
-  assert.match(homePage, /A growing network serving more than 100 local homes—and counting/);
+  assert.match(homePage, /The intelligent local business network/);
+  assert.match(homePage, /Find the right local business/);
+  assert.match(homePage, /The local network that gets smarter every time you use it/);
+  assert.match(homePage, /Available Now/);
+  assert.match(homePage, /Growing With the Network/);
+  assert.match(homePage, /Where Connect is going/);
+  assert.match(homePage, /A directory tells you who exists/);
+  assert.match(homePage, /Connect Match/);
+  assert.match(homePage, /Request Once/);
+  assert.match(homePage, /Example of where Connect is going/);
+  assert.match(homePage, /product-direction illustration, not a live match or recommendation/);
+  assert.match(homePage, /Local membership should actually get you something/);
+  assert.match(homePage, /Property management proves the network every day/);
+  assert.match(homePage, /Help build the network from the beginning/);
   assert.match(companyPage, /inspired by a request from property-management leader Mary O’Sullivan/);
-  assert.match(companyPage, /repeatedly searching Google for a new contractor/);
+  assert.match(companyPage, /Starting where local coordination matters every day/);
   assert.match(membershipsPage, /FoundingMemberAvailability/);
-  assert.match(membershipsPage, /Five positions initially available per service category/);
-  assert.match(membershipsPage, /Ten positions initially available per service category/);
+  assert.match(membershipsPage, /Connect Member Benefit/);
+  assert.match(membershipsPage, /Current availability is confirmed by the enrollment system/);
   assert.doesNotMatch(publicSource, /9,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
   assert.doesNotMatch(publicSource, /18,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
   assert.doesNotMatch(publicSource, /guaranteed (?:NILA|Northern Illinois Landlord Association) adoption/i);
   assert.doesNotMatch(publicSource, /all (?:NILA|Northern Illinois Landlord Association) members (?:use|are on)/i);
   assert.match(homePage, /FOUNDING_MEMBER_OFFER\.cta/);
-  assert.match(homePage, /Founding Members receive premium placement/);
-  assert.match(homePage, /FOUNDING_MEMBER_OFFER\.monthlyComparison/);
-  assert.match(homePage, /one good job can pay for the entire year/);
+  assert.match(homePage, /Trust remains separate from paid visibility/);
+  assert.match(homePage, /founderPrice/);
+  assert.match(homePage, /category exclusivity/);
+  assert.doesNotMatch(homePage, /100\+|10,000|15,000/);
   assert.match(membershipsPage, /FoundingMemberAvailability/);
   assert.match(membershipsPage, /not just another directory listing/);
   assert.match(membershipsPage, /leads, jobs, and revenue are never guaranteed/);

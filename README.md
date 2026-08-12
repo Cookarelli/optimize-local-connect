@@ -56,9 +56,9 @@ npm run test
 npm run build
 ```
 
-## Founding Partner Stripe checkout development
+## Founding Member Stripe checkout development
 
-The canonical `/founders` offer is a **$499/year recurring Founding Member subscription**, limited to 25 total members. The public presentation currently shows 3 claimed and 22 remaining. The first charge is collected immediately in hosted Stripe Checkout and the subscription renews automatically every 12 months until canceled. The public CTA sends the customer through sign-in to the vendor membership flow; the server selects the configured annual Price and uses Stripe Checkout `subscription` mode. Only signed Stripe webhooks update membership status.
+The canonical `/memberships` offer is a **$499/year recurring Founding Member subscription**, limited to 25 total members. Current availability is confirmed during enrollment from governed membership records rather than a hardcoded public count. The first charge is collected immediately in hosted Stripe Checkout and the subscription renews automatically every 12 months until canceled. The public guest-enrollment flow collects the required business details before the server selects the configured annual Price and opens Stripe Checkout in `subscription` mode. Only signed Stripe webhooks update membership status.
 
 Add these server-side values to `.env.local`:
 
@@ -84,7 +84,7 @@ stripe login
 stripe listen --events checkout.session.completed,checkout.session.expired,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,invoice.paid,invoice.payment_failed --forward-to localhost:3000/api/payments/stripe/webhook
 ```
 
-Copy the listener's `whsec_...` value into `.env.local`, restart the app, visit `/founders`, and click **Become a Founding Partner**. Sign in to a vendor organization and complete Checkout. In Stripe test mode use card number `4242 4242 4242 4242`, any future expiration date, any three-digit CVC, and any valid postal code. Do not use real card details in test mode.
+Copy the listener's `whsec_...` value into `.env.local`, restart the app, visit `/memberships`, and click **Claim Your Founder Category**. Complete the guest-enrollment form and continue to Checkout. In Stripe test mode use card number `4242 4242 4242 4242`, any future expiration date, any three-digit CVC, and any valid postal code. Do not use real card details in test mode.
 
 After payment, confirm the subscription-backed membership in the Supabase SQL editor:
 

@@ -17,6 +17,8 @@ const guestFoundingCheckoutEnvironment = [
   "STRIPE_SECRET_KEY",
   "STRIPE_FOUNDING_MEMBER_PRODUCT_ID",
   "STRIPE_FOUNDING_MEMBER_PRICE_ID",
+  "STRIPE_FOUNDING_PRODUCT_ID",
+  "STRIPE_FOUNDING_VENDOR_PRICE_ID",
   "NEXT_PUBLIC_APP_URL",
 ] as const;
 
@@ -284,7 +286,7 @@ export async function saveFoundingPartnerOnboarding(_state: OnboardingState, for
   });
   if (perkError) {
     safeLog("founding_partner_perk_save_failed", perkError, { onboardingId: access.onboardingId });
-    return { status: "error", message: "We could not save the Property Manager Perk. Review it and try again." };
+    return { status: "error", message: "We could not save the Connect Member Benefit. Review it and try again." };
   }
   const { error } = await admin.rpc("save_founding_partner_onboarding", {
     target_onboarding_id: access.onboardingId,

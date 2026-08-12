@@ -47,7 +47,7 @@ export default async function FoundingPartnerSuccessPage({ searchParams }: { sea
         <p className="mt-7 text-xs font-black uppercase tracking-[.18em] text-emerald-700">Legacy Optimize Local Connect Founder payment</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-5xl">{paid ? "Payment confirmed." : invalid ? "We could not identify that checkout." : lookupFailed ? "We could not check your payment yet." : "Payment verification is in progress."}</h1>
         <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-slate-600">{paid
-          ? "Stripe confirmed this historical $299 Founder payment directly to our server. Your pending Founding Partner record is ready for the next step."
+          ? "Stripe confirmed this historical $299 Founder payment directly to our server. Your pending Founding Member record is ready for the next step."
           : invalid
             ? "Return to the current Founding Member page to begin a new secure checkout. No payment status was inferred from this page address."
             : lookupFailed

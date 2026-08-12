@@ -10,6 +10,7 @@ const category = readFileSync(new URL("../app/marketplace/category/[slug]/page.t
 const api = readFileSync(new URL("../app/api/marketplace/vendors/route.ts", import.meta.url), "utf8");
 const home = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const shell = readFileSync(new URL("../src/components/marketplace/public-marketplace-shell.tsx", import.meta.url), "utf8");
+const authProxy = readFileSync(new URL("../src/lib/supabase/proxy.ts", import.meta.url), "utf8");
 
 test("public Founder visibility requires verified payment, approved activation, consent, and active marketplace records", () => {
   assert.match(migration, /p\.payment_status='paid' and p\.amount_paid_cents=29900 and p\.currency='USD'/);
@@ -38,10 +39,11 @@ test("generic marketplace publication requires the shared lifecycle for every pa
 test("the marketplace is a public route rather than inheriting the authenticated platform layout", () => {
   assert.equal(existsSync(new URL("../app/marketplace/page.tsx", import.meta.url)), true);
   assert.equal(existsSync(new URL("../app/(platform)/marketplace/page.tsx", import.meta.url)), false);
+  assert.doesNotMatch(authProxy, /PROTECTED_PREFIXES[\s\S]*"\/marketplace"/);
 });
 
 test("public users can search, browse categories and locations, open profiles, and contact vendors", () => {
-  for (const control of ["Search business, service, or category", "Every category", "Every service area", "View profile", "Call vendor", "Email vendor"]) assert.match(directory, new RegExp(control));
+  for (const control of ["Search business, service, or category", "Every category", "Every service area", "View profile", "Call business", "Email business"]) assert.match(directory, new RegExp(control));
   assert.match(directory, /\/marketplace\/category\/\$\{item\.slug\}/);
   assert.match(profile, /mailto:\$\{profile\.email\}/);
   assert.match(profile, /tel:\$\{profile\.phone\}/);
@@ -58,7 +60,7 @@ test("vendor and category pages provide marketplace-specific SEO metadata and ho
 
 test("production homepage no longer presents invented marketplace vendors", () => {
   for (const inventedVendor of ["AirRight Mechanical", "Metro Climate Co.", "North Texas Comfort"]) assert.doesNotMatch(home, new RegExp(inventedVendor));
-  assert.match(home, /Browse active partners/);
+  assert.match(home, /Explore the Network/);
 });
 
 test("public marketplace branding does not render invalid nested links", () => {

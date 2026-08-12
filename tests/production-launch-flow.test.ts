@@ -8,6 +8,7 @@ const foundersAction = readFileSync(new URL("../app/founders/actions.ts", import
 const pricingPage = readFileSync(new URL("../app/pricing/page.tsx", import.meta.url), "utf8");
 const origin = readFileSync(new URL("../src/lib/auth/origin.ts", import.meta.url), "utf8");
 const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
+const brand = readFileSync(new URL("../src/domain/platform/brand.ts", import.meta.url), "utf8");
 const signInAction = readFileSync(new URL("../app/(auth)/sign-in/actions.ts", import.meta.url), "utf8");
 const callback = readFileSync(new URL("../app/auth/callback/route.ts", import.meta.url), "utf8");
 const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
@@ -17,17 +18,22 @@ const legacyFoundersClaimPage = readFileSync(new URL("../app/founding-fifty/clai
 
 test("homepage exposes a direct Founding Member enrollment CTA above the fold", () => {
   assert.match(homepage, /FOUNDING_MEMBER_OFFER\.cta/);
-  assert.match(homepage, /Founding Member Enrollment Now Open/);
-  assert.match(homepage, /ArrowLink href="\/founders"/);
-  assert.match(homepage, /ArrowLink href="\/founders">\{FOUNDING_MEMBER_OFFER\.cta\}/);
-  assert.match(homepage, /Vendor Login/);
-  assert.match(homepage, /Staff Login/);
-  assert.match(homepage, /FoundingMemberAvailability className="mb-7 max-w-2xl" ctaHref="\/founders"/);
+  assert.match(homepage, /The intelligent local business network/);
+  assert.match(homepage, /ArrowLink href="\/memberships"/);
+  assert.match(homepage, /ArrowLink href="\/memberships">\{FOUNDING_MEMBER_OFFER\.cta\}/);
+  assert.match(homepage, /Sign in/);
+  assert.doesNotMatch(homepage, /FOUNDING_MEMBER_OFFER\.(claimed|remaining)/);
   assert.match(homepage, /\{FOUNDING_MEMBER_OFFER\.cta\}<\/ArrowLink>/);
 });
 
+test("public metadata positions Connect as an intelligent local business network", () => {
+  assert.match(layout, /Optimize Local Connect \| Intelligent Local Business Network/);
+  assert.match(layout, /twitter:[\s\S]*description: PLATFORM_BRAND\.description/);
+  assert.match(brand, /Discover trusted local businesses, member benefits, referrals, and smarter matching/);
+});
+
 test("Founder enrollment CTAs use the public guest checkout route", () => {
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/founders"/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships"/);
   assert.match(vendorMembershipPage, /founding\?<Link href="\/founders"/);
   assert.match(legacyFoundersPage, /redirect\("\/memberships"\)/);
   assert.match(legacyFoundersClaimPage, /redirect\("\/memberships"\)/);
@@ -43,7 +49,7 @@ test("Founding Member enrollment is public and server-controlled", () => {
   assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
   assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.doesNotMatch(foundersAction, /requireUser\(|getCurrentUser\(/);
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/founders"/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships"/);
 });
 
 test("guest checkout validation failures log Zod issue categories without customer values", () => {

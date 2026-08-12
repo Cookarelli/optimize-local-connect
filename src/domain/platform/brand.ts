@@ -7,8 +7,9 @@ export const PLATFORM_BRAND = {
   companyTagline: "Optimize Local. Maximize Savings.",
   mission: "Save Time. Save Money. Strengthen Communities.",
   manifesto: "We’re not building software. We’re building stronger local economies—one optimized decision at a time.",
-  description: "An AI-powered community platform connecting local organizations with trusted providers, shared workflows, and better decisions.",
-  philosophy: "Optimize Local builds AI-powered technology that helps communities keep more money local by connecting people with trusted businesses, helping them make smarter decisions, and creating measurable economic impact.",
+  northStar: "The local network that gets smarter every time you use it.",
+  description: "Discover trusted local businesses, member benefits, referrals, and smarter matching through a network designed to grow more useful over time.",
+  philosophy: "Optimize Local helps communities keep more money local by connecting people and organizations with trusted businesses, strengthening useful relationships, and making local decisions more informed over time.",
   vision: "A future where every local decision strengthens the community behind it.",
 } as const;
 

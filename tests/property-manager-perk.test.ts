@@ -40,8 +40,8 @@ test("migration preserves vendors, gates public data by entitlement, and exposes
   assert.match(migration, /vendor_has_entitlement\(o\.id,'property_manager_perk'\)/);
   assert.match(migration, /property_manager_perk_expiration_date>=current_date/);
   assert.match(migration, /perk_filter='any'/);
-  assert.match(directory, /Has Property Manager Perk/);
-  assert.match(directory, /Property Manager Perk/);
+  assert.match(directory, /Has a member benefit/i);
+  assert.match(directory, /Connect Member Benefit/);
   assert.match(profile, /profile\.propertyManagerPerk/);
   assert.match(reconciliationMigration, /vendor_profiles_perk_entitlement/);
   assert.match(reconciliationMigration, /vendor_has_entitlement\(new\.organization_id,'property_manager_perk'\)/);

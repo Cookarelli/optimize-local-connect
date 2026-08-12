@@ -28,26 +28,26 @@ import { FOUNDING_MEMBER_OFFER, FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_
 const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
 export const metadata: Metadata = {
-  title: "Vendor Memberships",
+  title: "Business Memberships",
   description:
     "For less than $42 a month paid annually, Founding Members receive a full year of local visibility and network access—without guaranteed leads or revenue.",
   alternates: { canonical: "https://www.optimizelocalai.com/memberships" },
   openGraph: {
-    title: "Optimize Local Connect Vendor Memberships",
+    title: "Optimize Local Connect Business Memberships",
     description: `${founderPrice} for a full year of local visibility and network access. Founding Membership is limited to the first ${FOUNDING_MEMBER_OFFER.capacity} businesses.`,
-    images: [{ url: "/og-founders.png", width: 1536, height: 1024, alt: "Optimize Local Connect Vendor Memberships" }],
+    images: [{ url: "/og-founders.png", width: 1536, height: 1024, alt: "Optimize Local Connect Business Memberships" }],
   },
   twitter: { card: "summary_large_image", images: ["/og-founders.png"] },
 };
 
 const benefits = [
   [Award, "Founding Member badge", "Founding Member recognition remains active while your annual membership is current."],
-  [Store, "A presence beyond a directory listing", "A richer place to show what your business does, where you work, and why a property manager should contact you."],
-  [SearchCheck, "Priority marketplace placement", "Preferred visibility during the founding period, subject to relevance, verification, and marketplace rules."],
+  [Store, "A presence beyond a directory listing", "A richer place to show what your business does, where you work, and why a local customer or partner should contact you."],
+  [SearchCheck, "Governed marketplace visibility", "Founding recognition and visibility during the early network period, kept separate from relevance, trust, and future best-fit recommendations."],
   [MapPin, "Services and service areas", "List what you do and the communities your team is prepared to serve."],
-  [Handshake, "Direct contact opportunities", "Qualified buyers can request service or contact your business through your marketplace profile."],
+  [Handshake, "Direct contact opportunities", "Visitors can call, email, or visit your website from the public marketplace profile."],
   [Sparkles, "Early product access", "Get access to selected new marketplace tools as they become available."],
-  [MessageSquareText, "A voice in the product", "Share practical feedback from the field and help us prioritize what local vendors need."],
+  [MessageSquareText, "A voice in the product", "Share practical feedback from the field and help us prioritize what local businesses need."],
   [ShieldCheck, "Annual membership", `${founderPrice} for a full year of local visibility and network access. It renews annually unless you cancel before the renewal date.`],
 ] as const;
 
@@ -61,31 +61,31 @@ const audiences = [
   "Appliance professionals",
   "Cleaning companies",
   "Handymen",
-  "Other local home-service vendors",
+  "Other local service businesses",
 ];
 
 const steps = [
-  ["01", "Join", `Enter your business details and complete Stripe's hosted checkout. Your ${founderPrice} Founding Member membership begins immediately.`],
+  ["01", "Join", `Enter your business details and complete Stripe's hosted checkout. Billing begins after Stripe confirms the ${founderPrice} annual subscription.`],
   ["02", "Submit business details", "Tell us who you serve, what work you perform, and where your team operates."],
   ["03", "Profile reviewed", "We review business information and may request credentials before the listing is published."],
   ["04", "Listing activated", "Approved profiles become available in the marketplace with their Founding Member recognition."],
 ] as const;
 
 const faqs = [
-  ["Is this a subscription?", `Yes. The Founding Member membership is ${founderPrice} per year and renews annually unless you cancel before the renewal date.`],
-  ["How limited is the Founding Member offer?", `Founding Membership is limited to the first ${FOUNDING_MEMBER_OFFER.capacity} businesses. ${FOUNDING_MEMBER_OFFER.claimed} spots have already been claimed, leaving ${FOUNDING_MEMBER_OFFER.remaining} remaining.`],
-  ["How should I think about the investment?", `The membership is ${founderPrice} for the entire year—${FOUNDING_MEMBER_OFFER.monthlyComparison.toLowerCase()} For many local service businesses, one good job can pay for the membership, though leads, jobs, and revenue are never guaranteed.`],
-  ["Are leads or revenue guaranteed?", "No. Optimize Local Connect does not guarantee leads, jobs, revenue, marketplace rank, or a return on the membership. The opportunity is preferred visibility and early participation in a growing local marketplace."],
-  ["What happens after payment?", "Stripe sends the payment result directly to our server. After the payment is verified, we save your Founding Partner record and prepare your business information for review. A browser confirmation alone never activates a membership."],
+  ["Is this a subscription?", `Yes. Founding Membership is ${founderPrice} and renews annually unless you cancel before the renewal date.`],
+  ["How limited is the Founding Member offer?", `There are ${FOUNDING_MEMBER_OFFER.capacity} original Founder positions. Current availability is confirmed by the enrollment system from membership records. Category selection is reviewed individually and is not reserved at checkout.`],
+  ["How should I think about the investment?", `The membership is ${founderPrice} for the full year—${FOUNDING_MEMBER_OFFER.monthlyComparison.toLowerCase()} Its value is network participation, governed visibility, Founder recognition, and the included membership tools, not a promised business result.`],
+  ["Are leads or revenue guaranteed?", "No. Optimize Local Connect does not guarantee leads, jobs, revenue, marketplace rank, or a return on membership; leads, jobs, and revenue are never guaranteed. The offer is governed visibility and early participation in a growing local network."],
+  ["What happens after payment?", "Stripe sends the payment result directly to our server. After verification, we create the Founding Member record and prepare your business profile for review. A browser confirmation alone never activates a membership."],
   ["Can any business join?", "The offer is intended for legitimate local service businesses. Applications may be reviewed for fit, quality, category availability, and the information or credentials needed for a trustworthy marketplace."],
-  ["When will the marketplace be fully available?", "Optimize Local Connect is being introduced in stages. Founding Partners are joining during the early marketplace period, before every planned buyer, market, and tool is available."],
+  ["When will the marketplace be fully available?", "Optimize Local Connect is being introduced in stages. Founding Members are joining during the early network period, before every planned market and tool is available."],
   ["What information is needed?", "Stripe first collects your email and business name. After verified payment, you will add a contact name, phone, website if available, service category, city, and a short business description for review."],
 ] as const;
 
 const membershipCards = [
-  { key: "founding_partner", name: FOUNDING_MEMBER_OFFER.name, price: founderPrice, badge: "Founding Member Badge", features: ["Full-year local visibility and network access", "Founding Member recognition", "Early access", "Featured profile", `${FOUNDING_MEMBER_OFFER.remaining} of ${FOUNDING_MEMBER_OFFER.capacity} spots currently available`] },
-  { key: "preferred", name: "Preferred", price: "$49/month", badge: "Preferred Badge", features: ["Higher placement", "Preferred badge", "Enhanced profile", "Five positions initially available per service category"] },
-  { key: "network", name: "Network", price: "$19/month", badge: "Network Badge", features: ["Listed in marketplace", "Vendor profile", "Opportunity access", "Ten positions initially available per service category"] },
+  { key: "founding_partner", name: FOUNDING_MEMBER_OFFER.name, price: founderPrice, badge: "Original-network opportunity", description: "For businesses that want to help build the original network and receive governed Founder recognition.", features: ["Founding Member badge", "Governed enhanced visibility", "Connect Member Benefit", `Limited to ${FOUNDING_MEMBER_OFFER.capacity} original positions`] },
+  { key: "preferred", name: "Preferred", price: "$49/month", badge: "Stronger ongoing presence", description: "For businesses that want stronger ongoing visibility without the annual Founder commitment.", features: ["Enhanced visibility", "Preferred badge", "Expanded business profile", "Connect Member Benefit"] },
+  { key: "network", name: "Network", price: "$19/month", badge: "Easy entry point", description: "For businesses ready to join the network and begin building a reviewed Connect presence.", features: ["Marketplace visibility", "Business profile", "Network access", "Direct customer contact"] },
 ] as const;
 
 export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string; plan?: string }> }) {
@@ -94,13 +94,13 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
   const checkoutMessage = checkout === "cancelled"
     ? "Checkout was cancelled. You were not charged and can restart whenever you are ready."
     : checkout === "sold_out"
-      ? "Founding Partner enrollment is currently full. No payment session was created."
+      ? "Founding Member enrollment is currently full. No payment session was created."
       : checkout === "unavailable"
         ? "Secure checkout is temporarily unavailable. Please try again shortly."
         : onboarding === "access_required"
           ? "Open the secure profile link from your verified payment confirmation, or sign in with the email used at checkout."
           : onboarding === "payment_not_verified"
-            ? "We could not find a verified paid Founding Partner record for that profile link."
+            ? "We could not find a verified paid Founding Member record for that profile link."
             : onboarding === "access_unavailable"
               ? "Profile access is temporarily unavailable. Please try the link from your payment confirmation again."
               : null;
@@ -109,7 +109,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[#f7f8f4]/95 backdrop-blur-xl">
         <div className="mx-auto flex min-h-18 max-w-[90rem] items-center justify-between gap-4 px-5 py-3 sm:px-8 lg:px-12">
           <Logo />
-          <nav aria-label="Founding Partner page" className="flex items-center gap-1 sm:gap-3">
+          <nav aria-label="Founding Member page" className="flex items-center gap-1 sm:gap-3">
             <a href="#details" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white lg:inline-flex">What you receive</a>
             <a href="#faq" className="hidden min-h-11 items-center rounded-full px-4 text-sm font-semibold text-slate-600 hover:bg-white sm:inline-flex">FAQ</a>
             <a href="#checkout" className="inline-flex min-h-11 items-center rounded-full bg-emerald-700 px-4 text-sm font-bold text-white hover:bg-emerald-800">Join now</a>
@@ -139,7 +139,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-400">Click to open Stripe’s hosted checkout. After Stripe verifies payment with our server, you will complete the business profile that goes to admin review.</p>
           </div>
 
-          <aside className="space-y-5"><FoundingMemberAvailability tone="dark" ctaHref="#checkout" /><p className="px-2 text-sm leading-6 text-slate-300">For many contractors and service businesses, one good job can pay for the entire membership. The value is a full year of local visibility and network access; it does not promise leads, jobs, or revenue.</p></aside>
+          <aside className="space-y-5"><FoundingMemberAvailability tone="dark" ctaHref="#checkout" /><p className="px-2 text-sm leading-6 text-slate-300">Founder value comes from original-network participation, recognition, reviewed visibility, and member tools. Membership does not promise leads, jobs, revenue, rank, or category exclusivity.</p></aside>
         </div>
       </section>
 
@@ -148,7 +148,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <p className="section-kicker">Membership plans</p>
           <h2 className="section-title">Choose the presence that fits your business.</h2>
           <div className="mt-9 grid gap-4 lg:grid-cols-3">
-            {membershipCards.map((plan) => <article key={plan.key} className={`flex flex-col rounded-[1.5rem] border p-6 ${plan.key === "founding_partner" ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-[#f7f8f4]"}`}><p className="text-xs font-black uppercase tracking-[.16em] text-emerald-700">{plan.badge}</p><h3 className="mt-4 text-2xl font-bold">{plan.name}</h3><p className="mt-3 text-3xl font-semibold">{plan.price}</p><ul className="mt-6 space-y-3 border-t border-slate-200 pt-5">{plan.features.map(feature => <li key={feature} className="flex gap-2 text-sm text-slate-600"><Check aria-hidden="true" className="size-4 shrink-0 text-emerald-600" />{feature}</li>)}</ul><a href={`/memberships?plan=${plan.key}#checkout`} className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white hover:bg-emerald-700">{plan.key === "founding_partner" ? FOUNDING_MEMBER_OFFER.cta : "Choose Plan"}</a></article>)}
+            {membershipCards.map((plan) => <article key={plan.key} className={`flex flex-col rounded-[1.5rem] border p-6 ${plan.key === "founding_partner" ? "border-emerald-300 bg-emerald-50 shadow-lg shadow-emerald-950/5 lg:-translate-y-2" : "border-slate-200 bg-[#f7f8f4]"}`}><p className="text-xs font-black uppercase tracking-[.16em] text-emerald-700">{plan.badge}</p><h3 className="mt-4 text-2xl font-bold">{plan.name}</h3><p className="mt-3 text-3xl font-semibold">{plan.price}</p><p className="mt-4 text-sm leading-6 text-slate-600">{plan.description}</p><ul className="mt-6 space-y-3 border-t border-slate-200 pt-5">{plan.features.map(feature => <li key={feature} className="flex gap-2 text-sm text-slate-600"><Check aria-hidden="true" className="size-4 shrink-0 text-emerald-600" />{feature}</li>)}</ul><div className="mt-auto pt-8"><a href={`/memberships?plan=${plan.key}#checkout`} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white hover:bg-emerald-700">{plan.key === "founding_partner" ? FOUNDING_MEMBER_OFFER.cta : plan.key === "preferred" ? "Join Preferred" : "Join Network"}</a></div></article>)}
           </div>
         </div>
       </section>
@@ -157,7 +157,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
         <div className="mx-auto grid max-w-[90rem] gap-px bg-slate-200 sm:grid-cols-3">
           {[
             [BriefcaseBusiness, "Built for working service businesses", "A straightforward annual membership through Stripe."],
-            [Users, "Reach local decision-makers", "A profile designed for the people who hire local vendors."],
+            [Users, "Reach local decision-makers", "A profile designed for the people who hire local businesses."],
             [Clock3, "Join during the early marketplace period", "Receive early-partner recognition as Connect grows."],
           ].map(([Icon, title, copy]) => {
             const ItemIcon = Icon as typeof Building2;
@@ -171,7 +171,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
           <div className="max-w-3xl">
             <p className="section-kicker">What you receive</p>
             <h2 className="section-title">A stronger marketplace presence from the start.</h2>
-            <p className="section-copy">Practical tools and recognition for local vendors who want to establish their presence early—not a promise of leads.</p>
+            <p className="section-copy">Practical tools and recognition for local businesses that want to establish their presence early—not a promise of leads.</p>
           </div>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {benefits.map(([Icon, title, copy]) => <article key={title} className="rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm"><span className="grid size-11 place-items-center rounded-2xl bg-emerald-50"><Icon aria-hidden="true" className="size-5 text-emerald-700" /></span><h3 className="mt-7 text-lg font-bold">{title}</h3><p className="mt-3 text-sm leading-6 text-slate-500">{copy}</p></article>)}
@@ -208,7 +208,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
             {[
               [SearchCheck, "No guaranteed leads or revenue", "Visibility can create opportunities, but buyer demand, job volume, ranking, and business results are never guaranteed."],
               [ClipboardCheck, "Quality and category review", "We may review applications, business details, credentials, service fit, and category availability before publishing a listing."],
-              [ListChecks, "A marketplace still growing", "This is an early Founding Partner opportunity. Buyer participation, service areas, and marketplace tools will expand over time."],
+              [ListChecks, "A network still growing", "This is an early Founding Member opportunity. Participation, service areas, and marketplace tools will expand over time."],
             ].map(([Icon, title, copy]) => {
               const ItemIcon = Icon as typeof BadgeCheck;
               return <article key={title as string} className="flex gap-4 rounded-2xl border border-white/10 bg-white/[.055] p-5 sm:p-6"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-emerald-400/10"><ItemIcon aria-hidden="true" className="size-5 text-emerald-400" /></span><div><h3 className="font-bold">{title as string}</h3><p className="mt-2 text-sm leading-6 text-slate-400">{copy as string}</p></div></article>;
@@ -230,7 +230,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
         <div className="relative mx-auto max-w-[90rem] overflow-hidden rounded-[2rem] bg-emerald-700 px-6 py-14 text-white sm:px-12 sm:py-18 lg:px-18">
           <div aria-hidden="true" className="absolute -right-28 -top-28 size-80 rounded-full border-[52px] border-white/[.06]" />
           <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Member</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">A practical annual investment in being easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">{founderPrice} for the entire year. {FOUNDING_MEMBER_OFFER.monthlyComparison} {FOUNDING_MEMBER_OFFER.claimed} spots have already been claimed.</p><p className="mt-3 max-w-2xl text-xs leading-5 text-emerald-200">{FOUNDING_PARTNER_RENEWAL_DISCLOSURE}</p></div>
+            <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-200">Optimize Local Connect Founding Member</p><h2 className="mt-5 max-w-4xl text-4xl font-semibold leading-[.98] tracking-[-.05em] sm:text-6xl">A practical annual investment in being easier to find—and easier to choose.</h2><p className="mt-5 max-w-2xl text-base leading-7 text-emerald-100">{founderPrice} for the entire year. {FOUNDING_MEMBER_OFFER.monthlyComparison} Current availability is confirmed during enrollment.</p><p className="mt-3 max-w-2xl text-xs leading-5 text-emerald-200">{FOUNDING_PARTNER_RENEWAL_DISCLOSURE}</p></div>
             <div className="flex flex-col items-start gap-3 lg:items-stretch"><a href="#checkout" className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-bold text-emerald-800 hover:bg-emerald-50">{FOUNDING_MEMBER_OFFER.cta}</a><a href="#details" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/25 px-5 text-sm font-bold text-white hover:bg-white/10">See What&apos;s Included</a></div>
           </div>
         </div>
@@ -239,7 +239,7 @@ export default async function FoundersPage({ searchParams }: { searchParams: Pro
       <footer className="bg-white">
         <div className="mx-auto flex max-w-[90rem] flex-col gap-6 px-5 py-9 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
           <Logo />
-          <div className="flex flex-wrap gap-5 text-sm text-slate-500"><Link href="/">Platform</Link><Link href="/company">Company</Link><Link href="/memberships">Vendor Memberships</Link><Link href="/sign-in">Vendor or Staff Login</Link></div>
+          <div className="flex flex-wrap gap-5 text-sm text-slate-500"><Link href="/">Platform</Link><Link href="/company">Company</Link><Link href="/memberships">Business Memberships</Link><Link href="/sign-in">Member or Staff Login</Link></div>
         </div>
       </footer>
     </main>

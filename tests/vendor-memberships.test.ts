@@ -60,6 +60,20 @@ test("every publicly purchasable paid tier requires a distinct Stripe Product an
   assert.throws(()=>validatePurchasableVendorPlanStripeConfig({}),/STRIPE_FOUNDING_MEMBER_PRODUCT_ID/);
 });
 
+test("Founder checkout accepts deployment aliases but still relies on strict Stripe price validation", () => {
+  const configured = validatePurchasableVendorPlanStripeConfig({
+    STRIPE_FOUNDING_PRODUCT_ID:"prod_founding_alias",
+    STRIPE_FOUNDING_VENDOR_PRICE_ID:"price_founding_alias",
+    STRIPE_NETWORK_PRODUCT_ID:"prod_network",
+    STRIPE_NETWORK_MEMBER_PRICE_ID:"price_network",
+    STRIPE_PREFERRED_PRODUCT_ID:"prod_preferred",
+    STRIPE_PREFERRED_VENDOR_PRICE_ID:"price_preferred",
+  });
+  assert.equal(configured[0]?.productId, "prod_founding_alias");
+  assert.equal(configured[0]?.priceId, "price_founding_alias");
+  assert.match(membershipStripe, /Stripe membership Price validation failed/);
+});
+
 test("guest checkout uses the selected canonical plan for Stripe and membership metadata", () => {
   assert.match(foundersAction, /normalizeVendorPlanKey/);
   assert.match(foundersAction, /getVendorPlanProductId\(plan\)/);
@@ -71,7 +85,7 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
 });
 
 test("public membership page presents every plan and preselects it for guest checkout", () => {
-  for (const offer of ["Founding Member", "Preferred", "Network", "founderPrice", "$49/month", "$19/month", "Founding Member Badge", "Preferred Badge", "Network Badge", "Choose Plan"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
+  for (const offer of ["Founding Member", "Preferred", "Network", "founderPrice", "$49/month", "$19/month", "Join Preferred", "Join Network"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
   assert.match(membershipsPage, /memberships\?plan=\$\{plan\.key\}#checkout/);
   assert.match(membershipsPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
   assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);

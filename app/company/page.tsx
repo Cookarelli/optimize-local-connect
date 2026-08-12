@@ -4,11 +4,11 @@ import {
   ArrowDown,
   ArrowRight,
   BadgeCheck,
-  BrainCircuit,
   CircleDollarSign,
   HeartHandshake,
   MapPin,
   Network,
+  SearchCheck,
   Sparkles,
 } from "lucide-react";
 import { Logo } from "@/src/components/brand/logo";
@@ -16,10 +16,10 @@ import { COMPANY_VALUES, PLATFORM_BRAND } from "@/src/domain/platform/brand";
 
 export const metadata: Metadata = {
   title: { absolute: `Company | ${PLATFORM_BRAND.parentName}` },
-  description: "Optimize Local Connect helps property managers build dependable, long-term relationships with responsive local contractors.",
+  description: PLATFORM_BRAND.description,
   openGraph: {
     title: `${PLATFORM_BRAND.parentName} | Technology should make communities stronger.`,
-    description: "Dependable local vendors and stronger property-management relationships, starting with a growing network of more than 100 local homes.",
+    description: PLATFORM_BRAND.description,
     images: [{ url: "/og-company.png", width: 1536, height: 1024, alt: `${PLATFORM_BRAND.parentName} — Technology should make communities stronger.` }],
   },
 };
@@ -34,8 +34,8 @@ const impactLoop = [
   {
     number: "02",
     title: "Decide smarter",
-    description: "Turn local context, verified trust, and AI-assisted insight into better choices.",
-    icon: BrainCircuit,
+    description: "Use local context, trusted relationships, and increasingly useful network signals to support better choices.",
+    icon: SearchCheck,
   },
   {
     number: "03",
@@ -145,7 +145,7 @@ export default function CompanyPage() {
               <p>During the 2008 recession, our founder saw how quickly uncertainty reached local businesses—and how much resilience came from people choosing to trust, recommend, and support one another. The businesses that endured were often the ones rooted in real relationships with customers, partners, and their communities.</p>
               <p>That experience shaped Optimize Local. When communities can find trustworthy local businesses, make smarter decisions, and keep more dollars circulating nearby, every transaction can help protect jobs, deepen relationships, and build a stronger local economy.</p>
             </div>
-            <p className="mt-8 text-base leading-8 text-slate-600">We are building technology to make that choice easier: not a directory, but an intelligent community platform that helps local businesses earn opportunity on trust and helps organizations understand the impact of where they spend.</p>
+            <p className="mt-8 text-base leading-8 text-slate-600">We are building an intelligent local business network to make that choice easier: a place where local businesses can earn trust, relationships can travel, and useful activity can improve future connections.</p>
             <blockquote className="mt-14 border-l-2 border-emerald-600 pl-6 text-3xl font-semibold leading-tight tracking-[-.035em] text-slate-900 sm:text-4xl">“We’re not building software.<br /><br />We’re building stronger local economies—<br /><br />one optimized decision at a time.”</blockquote>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function CompanyPage() {
       <section className="bg-white py-24 sm:py-32">
         <div className="mx-auto grid max-w-[90rem] gap-12 px-5 sm:px-8 lg:grid-cols-[.7fr_1.3fr] lg:items-center lg:px-12">
           <div><p className="section-kicker">Property Management launch</p><div className="mt-8 flex items-center gap-3 text-sm font-semibold text-slate-600"><HeartHandshake className="size-5 text-emerald-700" /> Relationship-driven by design</div></div>
-          <div className="max-w-4xl"><h2 className="text-4xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl">Dependable local vendors. Stronger property-management relationships.</h2><div className="mt-8 space-y-5 text-base leading-8 text-slate-600"><p>Optimize Local Connect was inspired by a request from property-management leader Mary O’Sullivan. Property managers need dependable contractors who arrive on time, communicate clearly, and become trusted repeat-work partners.</p><p>Instead of repeatedly searching Google for a new contractor, property managers can build long-term relationships with responsive local vendors and pursue preferred pricing or discounts for repeat business where those vendors offer them.</p><p>A growing network serving more than 100 local homes—and counting. The platform is being built to support 10,000–15,000 homes as participation expands across the Northern Illinois Landlord Association and the broader regional property-management community.</p></div></div>
+          <div className="max-w-4xl"><h2 className="text-4xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl">Starting where local coordination matters every day.</h2><div className="mt-8 space-y-5 text-base leading-8 text-slate-600"><p>Optimize Local Connect was inspired by a request from property-management leader Mary O’Sullivan. Property managers repeatedly need dependable contractors across plumbing, electrical, HVAC, cleaning, landscaping, appliances, restoration, and other local services.</p><p>That makes property management a strong initial use case for building useful local relationships, reviewed business profiles, service requests, and member benefits.</p><p>The same network foundation is intended to expand to homeowners, realtors, businesses, organizations, and other local markets as participation and product capabilities grow.</p></div></div>
         </div>
       </section>
 
@@ -166,9 +166,9 @@ export default function CompanyPage() {
           </div>
           <div className="rounded-[2rem] bg-slate-950 p-7 text-white sm:p-10">
             <Logo inverse />
-            <p className="mt-12 text-xl leading-8 text-slate-300">{PLATFORM_BRAND.parentName} builds AI-powered community technology. {PLATFORM_BRAND.productName} is its shared operating platform, {PLATFORM_BRAND.aiName} optimizes decisions across it, and Property Management is Version 1 of a reusable community-marketplace foundation.</p>
+            <p className="mt-12 text-xl leading-8 text-slate-300">{PLATFORM_BRAND.parentName} builds tools for stronger local economies. {PLATFORM_BRAND.productName} is an intelligent local business network, with Property Management as its first operating use case and broader local connections as its direction.</p>
             <div className="mt-10 grid gap-3 sm:grid-cols-2">
-              {["Local-first intelligence", "Verified business networks", "Human-centered AI", "Measurable community impact"].map((item) => <span key={item} className="flex items-center gap-2 text-sm text-slate-300"><BadgeCheck className="size-4 text-emerald-400" />{item}</span>)}
+              {["Local-first intelligence", "Reviewed business profiles", "Member benefits", "Measurable community impact"].map((item) => <span key={item} className="flex items-center gap-2 text-sm text-slate-300"><BadgeCheck className="size-4 text-emerald-400" />{item}</span>)}
             </div>
           </div>
         </div>
