@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { FOUNDING_PARTNER_PLAN, formatVendorPlanPrice, isPremiumMembership, validatePurchasableVendorPlanStripeConfig, VENDOR_MEMBERSHIP_PLANS } from "../src/domain/vendor-memberships/catalog";
+import { FOUNDING_PARTNER_PLAN, formatVendorPlanPrice, isPremiumMembership, validatePurchasableVendorPlanStripeConfig, VENDOR_MEMBERSHIP_PAYMENT_LINKS, VENDOR_MEMBERSHIP_PLANS } from "../src/domain/vendor-memberships/catalog";
 import { canAccessVendorDashboard, canAppearInDirectory, canReceiveOpportunities, canUsePropertyManagerPerk, hasFounderBadge, hasPreferredPlacement } from "../src/domain/vendor-memberships/entitlements";
 import {membershipStatusFromStripe} from "../src/domain/vendor-memberships/status";
 
@@ -15,6 +15,7 @@ const foundersPage = readFileSync(new URL("../app/founders/page.tsx", import.met
 const foundersAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
 const homepage = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const pricingPage = readFileSync(new URL("../app/pricing/page.tsx", import.meta.url), "utf8");
+const foundingMemberAvailability = readFileSync(new URL("../src/components/founding-partner/founding-member-availability.tsx", import.meta.url), "utf8");
 const legacyFoundingPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
 const guestClaimMigration = readFileSync(new URL("../supabase/migrations/202607190025_guest_founding_vendor_checkout.sql", import.meta.url), "utf8");
 const guestCheckoutSourceMigration = readFileSync(new URL("../supabase/migrations/202607190026_allow_guest_founding_checkout_membership_source.sql", import.meta.url), "utf8");
@@ -84,10 +85,21 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
   assert.match(foundersAction, /createVendorMembershipCheckout\(checkoutPayload\)/);
 });
 
-test("public membership page presents every plan and preselects it for guest checkout", () => {
+test("public membership purchase buttons use the centralized Stripe Payment Links", () => {
   for (const offer of ["Founding Member", "Preferred", "Network", "founderPrice", "$49/month", "$19/month", "Join Preferred", "Join Network"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
-  assert.match(membershipsPage, /memberships\?plan=\$\{plan\.key\}#checkout/);
-  assert.match(membershipsPage, /GuestFoundingCheckoutForm defaultPlan=\{selectedPlan\}/);
+  assert.deepEqual(VENDOR_MEMBERSHIP_PAYMENT_LINKS, {
+    founding_partner: "https://buy.stripe.com/cNi28kcXwgUb55L1W343S07",
+    preferred: "https://buy.stripe.com/bJe9AM0aKfQ741H30743S08",
+    network: "https://buy.stripe.com/eVq6oAe1AgUb7dTcAH43S09",
+  });
+  assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => [plan.key, plan.checkoutUrl]), Object.entries(VENDOR_MEMBERSHIP_PAYMENT_LINKS));
+  assert.match(membershipsPage, /href=\{plan\.checkoutUrl\}/);
+  assert.match(membershipsPage, /href=\{FOUNDING_PARTNER_PLAN\.checkoutUrl\}/);
+  assert.doesNotMatch(membershipsPage, /GuestFoundingCheckoutForm/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
+  assert.match(pricingPage, /<a href=\{plan\.checkoutUrl\}/);
+  assert.match(foundingMemberAvailability, /limited to one eligible business per selected category/i);
+  assert.match(foundingMemberAvailability, /Payment does not by itself guarantee category eligibility or exclusivity/i);
   assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
 });
 
@@ -192,8 +204,8 @@ test("Founder sales page states the recurring annual offer and its limits", () =
   assert.match(membershipsPage, /Applications may be reviewed/i);
 });
 
-test("Founding Partner guest checkout reserves a webhook-backed claim using the server-controlled one-time Price", () => {
-  assert.match(membershipsPage, /GuestFoundingCheckoutForm/);
+test("automated guest checkout remains available for repair but is not publicly rendered", () => {
+  assert.doesNotMatch(membershipsPage, /GuestFoundingCheckoutForm/);
   assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
   assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.match(foundersAction, /membership\/claim\?session_id=\{CHECKOUT_SESSION_ID\}/);

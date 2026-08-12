@@ -32,8 +32,8 @@ test("public metadata positions Connect as an intelligent local business network
   assert.match(brand, /Discover trusted local businesses, member benefits, referrals, and smarter matching/);
 });
 
-test("Founder enrollment CTAs use the public guest checkout route", () => {
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships"/);
+test("public purchase CTAs use Payment Links while informational routes remain intact", () => {
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
   assert.match(vendorMembershipPage, /founding\?<Link href="\/founders"/);
   assert.match(legacyFoundersPage, /redirect\("\/memberships"\)/);
   assert.match(legacyFoundersClaimPage, /redirect\("\/memberships"\)/);
@@ -49,7 +49,7 @@ test("Founding Member enrollment is public and server-controlled", () => {
   assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
   assert.match(foundersAction, /target_plan_code: plan\.code/);
   assert.doesNotMatch(foundersAction, /requireUser\(|getCurrentUser\(/);
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships"/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
 });
 
 test("guest checkout validation failures log Zod issue categories without customer values", () => {
