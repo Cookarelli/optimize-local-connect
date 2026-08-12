@@ -43,7 +43,14 @@ export default defineConfig(async () => {
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
-  const plugins = [vinext(), nitro(), sites()];
+  const plugins = [vinext(), sites()];
+
+  // Vercel uses Nitro's Node output. The Sites/Cloudflare build must keep
+  // vinext's worker output in dist/ so the established release packager can
+  // publish dist/server/index.js.
+  if (isVercelBuild) {
+    plugins.splice(1, 0, nitro());
+  }
 
   if (!isVercelBuild) {
     // Wrangler snapshots its log path while the Cloudflare plugin is imported.
