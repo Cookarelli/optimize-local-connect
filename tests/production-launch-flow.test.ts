@@ -12,6 +12,7 @@ const brand = readFileSync(new URL("../src/domain/platform/brand.ts", import.met
 const signInAction = readFileSync(new URL("../app/(auth)/sign-in/actions.ts", import.meta.url), "utf8");
 const callback = readFileSync(new URL("../app/auth/callback/route.ts", import.meta.url), "utf8");
 const webhook = readFileSync(new URL("../app/api/payments/stripe/webhook/route.ts", import.meta.url), "utf8");
+const viteConfig = readFileSync(new URL("../vite.config.ts", import.meta.url), "utf8");
 const vendorMembershipPage = readFileSync(new URL("../app/(platform)/vendor/membership/page.tsx", import.meta.url), "utf8");
 const legacyFoundersPage = readFileSync(new URL("../app/founding-fifty/page.tsx", import.meta.url), "utf8");
 const legacyFoundersClaimPage = readFileSync(new URL("../app/founding-fifty/claim/[seatId]/page.tsx", import.meta.url), "utf8");
@@ -105,4 +106,12 @@ test("the signed Stripe webhook route is registered in application source", () =
   assert.match(webhook, /export async function POST/);
   assert.match(webhook, /constructStripeWebhookEvent/);
   assert.match(webhook, /processVendorMembershipStripeEvent/);
+});
+
+test("Vercel keeps Firebase Admin as traced Node dependencies", () => {
+  assert.match(viteConfig, /firebase-admin\/firestore/);
+  assert.match(viteConfig, /@google-cloud\/firestore/);
+  assert.match(viteConfig, /traceDeps: \["firebase-admin", "@google-cloud\/firestore"\]/);
+  assert.match(viteConfig, /rsc: \{ resolve: \{ external: vercelServerExternals \} \}/);
+  assert.match(viteConfig, /ssr: \{ resolve: \{ external: vercelServerExternals \} \}/);
 });

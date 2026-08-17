@@ -13,6 +13,12 @@ const { d1, r2 } = hostingConfig;
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const isVercelBuild = process.env.VERCEL === "1";
+const vercelServerExternals = [
+  "firebase-admin",
+  "firebase-admin/app",
+  "firebase-admin/firestore",
+  "@google-cloud/firestore",
+];
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -64,6 +70,15 @@ export default defineConfig(async () => {
   }
 
   return {
+    environments: isVercelBuild
+      ? {
+          rsc: { resolve: { external: vercelServerExternals } },
+          ssr: { resolve: { external: vercelServerExternals } },
+        }
+      : undefined,
+    nitro: isVercelBuild
+      ? { traceDeps: ["firebase-admin", "@google-cloud/firestore"] }
+      : undefined,
     optimizeDeps: {
       exclude: ["lucide-react"],
     },
