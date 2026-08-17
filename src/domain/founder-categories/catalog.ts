@@ -45,7 +45,6 @@ export function isFounderCategorySlug(value: string): value is FounderCategorySl
 
 export function initialFounderCategoryState(slug: FounderCategorySlug) {
   if (slug === "flooring") return { status: "claimed" as const, publicBusinessName: "Flooring Trends", paymentSource: "reserved_without_membership" as const };
-  if (slug === "roofing") return { status: "claimed" as const, publicBusinessName: "CLA Exteriors", paymentSource: "reserved_without_membership" as const };
   if (slug === "appliance-repair") return { status: "reserved" as const, publicBusinessName: null, paymentSource: "reserved_without_membership" as const };
   return { status: "available" as const, publicBusinessName: null, paymentSource: null };
 }
