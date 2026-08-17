@@ -4,11 +4,13 @@ import { useActionState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { updatePassword, type PasswordState } from "@/app/(auth)/reset-password/actions";
 import { Button } from "@/src/components/ui/button";
+import { FirebaseResetPasswordForm } from "@/src/components/auth/firebase-password-forms";
 
 const initialState: PasswordState = { status: "idle" };
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ oobCode = "" }: { oobCode?: string }) {
   const [state, action, pending] = useActionState(updatePassword, initialState);
+  if (process.env.NEXT_PUBLIC_OPERATIONAL_BACKEND === "firebase") return <FirebaseResetPasswordForm oobCode={oobCode} />;
   return <form action={action} className="space-y-4">
     <div><label htmlFor="new-password" className="mb-1.5 block text-sm font-medium text-slate-800">New password</label><input id="new-password" name="password" type="password" autoComplete="new-password" minLength={12} required className="min-h-11 w-full rounded-xl border border-slate-200 px-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /><p className="mt-1.5 text-xs text-slate-500">12+ characters with uppercase, lowercase, and a number.</p></div>
     <div><label htmlFor="password-confirmation" className="mb-1.5 block text-sm font-medium text-slate-800">Confirm password</label><input id="password-confirmation" name="confirmation" type="password" autoComplete="new-password" minLength={12} required className="min-h-11 w-full rounded-xl border border-slate-200 px-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" /></div>

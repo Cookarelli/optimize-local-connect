@@ -14,8 +14,11 @@ import { FoundingPartnerLogo } from "@/src/components/marketplace/founding-partn
 import {
   parsePublicFoundingPartnerCards,
   parsePublicMarketplaceFilters,
+  type PublicFoundingPartnerCard,
 } from "@/src/domain/vendor-memberships/marketplace";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { searchFirebaseMarketplace } from "@/src/lib/firebase/marketplace";
 
 const PAGE_SIZE = 24;
 const input = "min-h-12 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
@@ -66,21 +69,26 @@ export async function VendorMarketplaceDirectory({
   const perk = ["any", "priority_response", "free_estimate", "discount", "free_service", "multi_property_pricing"].includes(params.perk ?? "") ? params.perk! : "";
   const requestedPage = Math.max(1, Math.min(1000, Number.parseInt(params.page ?? "1", 10) || 1));
   const offset = (requestedPage - 1) * PAGE_SIZE;
-  const supabase = await createSupabaseServerClient();
-  const [{ data, error }, { data: filterData, error: filterError }] = await Promise.all([
-    supabase.rpc("search_public_vendors", {
-      search_query: q || null,
-      category_filter: category || null,
-      location_filter: location || null,
-      perk_filter: perk || null,
-      result_limit: PAGE_SIZE,
-      result_offset: offset,
-    }),
-    supabase.rpc("get_public_vendor_filters"),
-  ]);
-  const vendors = error ? [] : parsePublicFoundingPartnerCards(data);
-  const filters = filterError ? { categories: [], locations: [] } : parsePublicMarketplaceFilters(filterData);
-  const total = vendors[0]?.total_count ?? 0;
+  let vendors: PublicFoundingPartnerCard[];
+  let filters: { categories: Array<{ name: string; slug: string; count: number }>; locations: Array<{ name: string; count: number }> };
+  let total: number;
+  let marketplaceUnavailable = false;
+  if (isFirebaseOperationalBackend()) {
+    const result = await searchFirebaseMarketplace({ q, category, location, perk, page: requestedPage, pageSize: PAGE_SIZE });
+    vendors = result.vendors;
+    filters = result.filters;
+    total = result.total;
+  } else {
+    const supabase = await createSupabaseServerClient();
+    const [{ data, error }, { data: filterData, error: filterError }] = await Promise.all([
+      supabase.rpc("search_public_vendors", { search_query: q || null, category_filter: category || null, location_filter: location || null, perk_filter: perk || null, result_limit: PAGE_SIZE, result_offset: offset }),
+      supabase.rpc("get_public_vendor_filters"),
+    ]);
+    vendors = error ? [] : parsePublicFoundingPartnerCards(data);
+    filters = filterError ? { categories: [], locations: [] } : parsePublicMarketplaceFilters(filterData);
+    total = vendors[0]?.total_count ?? 0;
+    marketplaceUnavailable = Boolean(error || filterError);
+  }
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const title = fixedCategoryName
     ? `${fixedCategoryName} providers`
@@ -124,7 +132,7 @@ export async function VendorMarketplaceDirectory({
         <div className="mt-5 flex gap-3 overflow-x-auto pb-2">{filters.categories.map((item) => <Link key={item.slug} href={`/marketplace/category/${item.slug}`} className="min-w-48 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-emerald-300"><Store className="size-5 text-emerald-700" /><p className="mt-5 font-bold">{item.name}</p><p className="mt-1 text-xs text-slate-400">{item.count} active partner{item.count === 1 ? "" : "s"}</p></Link>)}</div>
       </section> : null}
 
-      {error || filterError ? <section className="mt-10 rounded-2xl border border-rose-200 bg-rose-50 p-8"><h2 className="font-bold text-rose-900">The marketplace is temporarily unavailable</h2><p className="mt-2 text-sm text-rose-800">Please refresh the page or return shortly.</p></section> : vendors.length ? <section className="mt-10"><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{vendors.map((vendor) => <article key={vendor.slug} className="flex flex-col rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg">
+      {marketplaceUnavailable ? <section className="mt-10 rounded-2xl border border-rose-200 bg-rose-50 p-8"><h2 className="font-bold text-rose-900">The marketplace is temporarily unavailable</h2><p className="mt-2 text-sm text-rose-800">Please refresh the page or return shortly.</p></section> : vendors.length ? <section className="mt-10"><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{vendors.map((vendor) => <article key={vendor.slug} className="flex flex-col rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg">
         <div className="flex items-start gap-3"><FoundingPartnerLogo src={vendor.logo_url} name={vendor.name} /><div className="min-w-0 flex-1"><h2 className="truncate text-lg font-bold"><Link href={`/marketplace/${vendor.slug}`} className="hover:text-emerald-700">{vendor.name}</Link></h2><p className="mt-1 text-xs font-semibold text-slate-500">{vendor.primary_category} · {vendor.membership_name}</p></div>{vendor.badge_label ? <span title={vendor.badge_label} className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-100"><Award className="size-4 text-amber-700" /></span> : null}</div>
         {vendor.badge_label ? <span className="mt-5 inline-flex w-fit items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.1em] text-amber-800"><Award className="size-3" />{vendor.badge_label}</span> : null}
         {vendor.property_manager_perk_enabled ? <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-[9px] font-black uppercase tracking-[.12em] text-amber-700">Connect Member Benefit</p><p className="mt-1 text-sm font-bold text-amber-950">{vendor.property_manager_perk_title}</p><p className="mt-1 line-clamp-2 text-xs leading-5 text-amber-900/70">{vendor.property_manager_perk_description}</p></div> : null}

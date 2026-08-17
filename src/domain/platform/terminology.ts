@@ -4,6 +4,8 @@ export const ROLE_LABELS: Readonly<Record<Role, string>> = {
   super_admin: "Super Admin",
   owner: "Owner",
   admin: "Admin",
+  manager: "Manager",
+  staff: "Staff",
   property_manager: "Property Manager",
   vendor: "Local Provider",
   technician: "Technician",

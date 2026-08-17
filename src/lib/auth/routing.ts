@@ -25,6 +25,6 @@ export function getMembershipHome(membership: Membership): string {
     return "/vendor";
   }
   if (membership.role === "owner" || membership.role === "admin") return "/admin";
-  if (membership.role === "property_manager") return "/manager";
+  if (["property_manager", "manager", "staff"].includes(membership.role)) return "/manager";
   return "/resident";
 }

@@ -6,6 +6,9 @@ import { getVendorPlan, getVendorPlanPriceId, normalizeVendorPlanKey } from "@/s
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { continueVendorMembershipCheckout, VendorCheckoutError } from "@/src/lib/stripe/vendor-membership-checkout";
+import { establishVendorOrganization } from "@/src/lib/firebase/organizations";
+import { startFirebaseCommercialMembershipCheckout } from "@/src/lib/firebase/membership-checkout";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 
 const enrollmentSchema = z.object({
   businessName: z.string().trim().min(2, "Enter your public business name.").max(160),
@@ -50,6 +53,17 @@ export async function createVendorOrganizationAndCheckout(_state: VendorEnrollme
   }
 
   const plan = getVendorPlan(parsed.data.plan)!;
+  if (isFirebaseOperationalBackend()) {
+    if (plan.key === "founding_partner") return { status: "error", message: "Use Founder category enrollment for a Founding Member." };
+    let checkoutUrl: string;
+    try {
+      const organization = await establishVendorOrganization({ user, businessName: parsed.data.businessName, legalName: parsed.data.legalName || null, contactName: parsed.data.contactName, phone: parsed.data.phone, websiteUrl: parsed.data.website || null });
+      checkoutUrl = await startFirebaseCommercialMembershipCheckout({ user, organizationId: organization.organizationId, organizationName: parsed.data.businessName, tier: plan.key });
+    } catch (error) {
+      return { status: "error", message: error instanceof Error && error.message.includes("active membership") ? "This business already has a current membership." : "Your Firebase vendor workspace was saved, but test Checkout could not be opened. It can be safely resumed." };
+    }
+    redirect(checkoutUrl);
+  }
   let priceId: string;
   try { priceId = getVendorPlanPriceId(plan); }
   catch { return { status: "error", message: "This membership is not configured for Checkout yet." }; }

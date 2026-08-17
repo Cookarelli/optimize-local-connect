@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { parsePublicFoundingPartnerCards } from "@/src/domain/vendor-memberships/marketplace";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { searchFirebaseMarketplace } from "@/src/lib/firebase/marketplace";
 
 const querySchema = z.object({
   q: z.string().trim().max(120).optional(), location: z.string().trim().max(160).optional(), category: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
@@ -12,6 +14,10 @@ export async function GET(request: Request) {
   const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
   if (!parsed.success) return Response.json({ error: "Invalid marketplace query.", details: parsed.error.flatten() }, { status: 400 });
   const input = parsed.data;
+  if (isFirebaseOperationalBackend()) {
+    const result = await searchFirebaseMarketplace({ q: input.q, location: input.location, category: input.category, perk: input.perk, offset: input.offset, pageSize: input.limit });
+    return Response.json({ vendors: result.vendors, total: result.total, limit: input.limit, offset: input.offset, bounded: result.bounded }, { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } });
+  }
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("search_public_vendors", {
     search_query: input.q || null, location_filter: input.location ?? null, category_filter: input.category ?? null, perk_filter: input.perk ?? null,

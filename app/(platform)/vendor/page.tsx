@@ -7,11 +7,34 @@ import { canUsePropertyManagerPerk } from "@/src/domain/vendor-memberships/prope
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { getFirebaseOrganizationMembership, isOperationalMembership } from "@/src/lib/firebase/memberships";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { getPlatformFirestore } from "@/src/lib/firebase/admin";
+import { listFirebaseVendorOpportunities } from "@/src/lib/firebase/service-requests";
+import type { VendorProfileDocument } from "@/src/domain/firebase-platform/types";
+import { getVendorPlan } from "@/src/domain/vendor-memberships/catalog";
 
 export default async function VendorDashboardPage() {
   const user = await requireUser();
   const membership = user.memberships.find(item => item.organizationType === "vendor" && ["owner", "admin", "vendor", "technician"].includes(item.role));
   if (!membership || membership.organizationType !== "vendor" || !["owner", "admin", "vendor", "technician"].includes(membership.role)) redirect(getRoleHome(user));
+  if (isFirebaseOperationalBackend()) {
+    const db = getPlatformFirestore();
+    const [commercialMembership, profileSnapshot, assignments] = await Promise.all([
+      getFirebaseOrganizationMembership(membership.organizationId, db),
+      db.doc(`vendorProfiles/${membership.organizationId}`).get(),
+      listFirebaseVendorOpportunities(user, membership.organizationId, db),
+    ]);
+    const eligible = commercialMembership ? isOperationalMembership(commercialMembership) : false;
+    if (!eligible) return <section className="mx-auto max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12"><Sparkles className="mx-auto size-10 text-emerald-700"/><h1 className="mt-5 text-3xl font-semibold tracking-tight">An active membership is required.</h1><p className="mt-3 text-sm leading-6 text-slate-600">Vendor dashboard access and opportunities require a verified active, complimentary, or manually granted Firebase membership.</p>{["owner", "admin"].includes(membership.role)?<Link href="/vendor/membership?error=membership_required" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white">Choose a membership <ArrowRight className="ml-2 size-4"/></Link>:null}</section>;
+    const profile = profileSnapshot.data() as VendorProfileDocument | undefined;
+    const plan = getVendorPlan(commercialMembership!.tier);
+    const activeAssignments = assignments.filter((item) => item.status === "assigned").length;
+    const accepted = assignments.filter((item) => ["accepted"].includes(item.status) || item.request.status === "in_progress").length;
+    const completed = assignments.filter((item) => item.request.status === "completed").length;
+    const firebaseMetrics = [["Assigned opportunities", activeAssignments, ClipboardCheck], ["Accepted work", accepted, Wrench], ["Completed requests", completed, FileText], ["Membership priority", commercialMembership!.priority, Sparkles]] as const;
+    return <div>{profile?.publicationState !== "published" ? <section className="mb-6 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-bold text-amber-950">Marketplace profile: {profile?.publicationState ?? "unpublished"}</p><p className="mt-1 text-xs text-amber-900/75">Membership does not publish a listing. Complete the profile, receive approval, and publish through the admin workflow.</p></div><Link href="/vendor/profile" className="inline-flex min-h-10 items-center justify-center rounded-full bg-amber-900 px-4 text-xs font-black text-white">Complete profile <ArrowRight className="ml-2 size-4"/></Link></section> : null}<div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-sm font-semibold text-emerald-700">Firebase vendor operations</p><h1 className="mt-1 text-4xl font-semibold">Welcome to {membership.organizationName}.</h1><p className="mt-2 text-sm text-slate-500">Manage your profile, membership, and rule-matched opportunities.</p></div><Link href="/vendor/membership" className="flex min-w-64 items-center justify-between rounded-2xl bg-slate-950 p-4 text-white"><span><span className="block text-[10px] font-black uppercase tracking-wider text-slate-400">Current membership</span><span className="mt-1 block text-sm font-bold">{plan?.name ?? commercialMembership!.tier}</span></span><ArrowRight className="size-4"/></Link></div><section className="mt-6 grid gap-3 sm:grid-cols-3"><Link href="/vendor/opportunities" className="rounded-2xl bg-emerald-50 p-5"><p className="font-bold text-emerald-900">Opportunities</p><p className="mt-2 text-xs text-emerald-800/75">Review safe summaries and respond to assigned work.</p></Link><Link href="/vendor/profile" className="rounded-2xl border bg-white p-5"><p className="font-bold">Marketplace profile</p><p className="mt-2 text-xs text-slate-500">Maintain public business details and consent.</p></Link><Link href="/marketplace" className="rounded-2xl border bg-white p-5"><p className="font-bold">Local Marketplace</p><p className="mt-2 text-xs text-slate-500">View the sanitized public directory.</p></Link></section><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{firebaseMetrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value.toLocaleString()}</p></div><Icon className="size-5 text-emerald-700"/></div></article>)}</section>{profile?.connectMemberBenefit.enabled ? <section className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6"><p className="text-xs font-black uppercase tracking-wider text-amber-700">Connect Member Benefit</p><h2 className="mt-2 font-bold text-amber-950">{profile.connectMemberBenefit.title ?? "Configured benefit"}</h2><p className="mt-2 text-sm text-amber-900/75">{profile.connectMemberBenefit.description}</p></section> : null}</div>;
+  }
   const supabase = await createSupabaseServerClient();
   const membershipPlan = await supabase.from("vendor_memberships").select("status,current_period_ends_at,vendor_membership_levels(code,name)").eq("vendor_organization_id",membership.organizationId).order("created_at",{ascending:false}).limit(1).maybeSingle();
   const currentPlan = membershipPlan.data?.vendor_membership_levels as unknown as {code:string;name:string}|null;

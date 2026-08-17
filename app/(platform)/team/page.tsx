@@ -5,6 +5,8 @@ import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { InviteMemberForm } from "@/src/components/team/invite-member-form";
 import { EmptyState, PageHeader } from "@/src/components/ui/page-header";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { getPlatformFirestore } from "@/src/lib/firebase/admin";
 
 type TeamMember = { id: string; role: string; status: string; profiles: { full_name: string | null } | null };
 type PendingInvitation = { id: string; email: string; role: string; expires_at: string };
@@ -12,6 +14,10 @@ type PendingInvitation = { id: string; email: string; role: string; expires_at: 
 export default async function TeamPage() {
   const user = await requireUser();
   const membership = user.memberships[0];
+  if (membership && isFirebaseOperationalBackend()) {
+    const db=getPlatformFirestore();const [membersSnapshot,invitationsSnapshot]=await Promise.all([db.collection("organizationMemberships").where("organizationId","==",membership.organizationId).where("status","==","active").get(),db.collection("organizationInvitations").where("organizationId","==",membership.organizationId).where("status","==","pending").get()]);const canInvite=can(user,"members:invite",membership.organizationId);
+    return <div><PageHeader eyebrow="Access" title="Team" description="Firestore-backed organization roles and secure invitations."/>{canInvite?<div className="mt-8"><InviteMemberForm roles={getInvitableRoles(membership.role,membership.organizationType)}/></div>:null}<div className="mt-6 grid gap-6 xl:grid-cols-2"><section><h2 className="mb-3 text-sm font-bold">Active members</h2>{membersSnapshot.docs.map(member=><div key={member.id} className="mb-2 rounded-xl border bg-white p-4"><p className="font-semibold">{String(member.data().userId)}</p><p className="text-xs capitalize text-slate-500">{String(member.data().role)}</p></div>)}</section><section><h2 className="mb-3 text-sm font-bold">Pending invitations</h2>{invitationsSnapshot.docs.map(invitation=><div key={invitation.id} className="mb-2 rounded-xl border bg-white p-4"><p className="font-semibold">{String(invitation.data().email)}</p><p className="text-xs capitalize text-slate-500">{String(invitation.data().role)}</p></div>)}</section></div></div>;
+  }
   const supabase = await createSupabaseServerClient();
   const [{ data, error }, { data: invitationData }] = membership ? await Promise.all([
     supabase.from("organization_members").select("id, role, status, profiles(full_name)").eq("organization_id", membership.organizationId).order("created_at"),

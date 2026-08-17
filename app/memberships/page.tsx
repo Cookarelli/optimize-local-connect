@@ -26,6 +26,7 @@ import { FoundingMemberAvailability } from "@/src/components/founding-partner/fo
 import { GuestFoundingCheckoutForm } from "@/src/components/founding-partner/guest-checkout-form";
 import { FOUNDING_MEMBER_OFFER, FOUNDING_PARTNER_PLAN, FOUNDING_PARTNER_RENEWAL_DISCLOSURE, formatVendorPlanPrice, VENDOR_MEMBERSHIP_PAYMENT_LINKS } from "@/src/domain/vendor-memberships/catalog";
 import { getPublicFounderCategoryAvailability } from "@/src/lib/founder-categories/public";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 
 const founderPrice = formatVendorPlanPrice(FOUNDING_PARTNER_PLAN);
 
@@ -86,8 +87,8 @@ const faqs = [
 
 const membershipCards = [
   { key: "founding_partner", name: FOUNDING_MEMBER_OFFER.name, price: founderPrice, checkoutUrl: "#founder-checkout", badge: "Original-network opportunity", description: "For businesses that want to help build the original network and receive governed Founder recognition.", features: ["Founding Member badge", "Governed enhanced visibility", "Connect Member Benefit", `Limited to ${FOUNDING_MEMBER_OFFER.capacity} original positions`] },
-  { key: "preferred", name: "Preferred", price: "$49/month", checkoutUrl: VENDOR_MEMBERSHIP_PAYMENT_LINKS.preferred, badge: "Stronger ongoing presence", description: "For businesses that want stronger ongoing visibility without the annual Founder commitment.", features: ["Enhanced visibility", "Preferred badge", "Expanded business profile", "Connect Member Benefit"] },
-  { key: "network", name: "Network", price: "$19/month", checkoutUrl: VENDOR_MEMBERSHIP_PAYMENT_LINKS.network, badge: "Easy entry point", description: "For businesses ready to join the network and begin building a reviewed Connect presence.", features: ["Marketplace visibility", "Business profile", "Network access", "Direct customer contact"] },
+  { key: "preferred", name: "Preferred", price: "$49/month", checkoutUrl: isFirebaseOperationalBackend() ? "/sign-in?next=/onboarding?plan=preferred" : VENDOR_MEMBERSHIP_PAYMENT_LINKS.preferred, badge: "Stronger ongoing presence", description: "For businesses that want stronger ongoing visibility without the annual Founder commitment.", features: ["Enhanced visibility", "Preferred badge", "Expanded business profile", "Connect Member Benefit"] },
+  { key: "network", name: "Network", price: "$19/month", checkoutUrl: isFirebaseOperationalBackend() ? "/sign-in?next=/onboarding?plan=network" : VENDOR_MEMBERSHIP_PAYMENT_LINKS.network, badge: "Easy entry point", description: "For businesses ready to join the network and begin building a reviewed Connect presence.", features: ["Marketplace visibility", "Business profile", "Network access", "Direct customer contact"] },
 ] as const;
 
 export default async function FoundersPage({ searchParams }: { searchParams: Promise<{ checkout?: string; onboarding?: string }> }) {

@@ -5,6 +5,8 @@ import { can } from "@/src/lib/auth/authorization";
 import { ImpactWidgets } from "@/src/components/impact/impact-widgets";
 import { getImpactRange, getOrganizationImpactSummary } from "@/src/lib/impact/summary";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { getPlatformFirestore } from "@/src/lib/firebase/admin";
 
 async function getCounts(organizationId: string) {
   const supabase = await createSupabaseServerClient();
@@ -18,6 +20,19 @@ async function getCounts(organizationId: string) {
 }
 
 export async function PropertyOperationsDashboard({ user, membership, mode }: { user: AppUser; membership: Membership; mode: "admin" | "manager" }) {
+  if (isFirebaseOperationalBackend()) {
+    const db = getPlatformFirestore();
+    const [propertiesSnapshot, requestSnapshot] = await Promise.all([
+      db.collection("properties").where("organizationId", "==", membership.organizationId).where("status", "==", "active").get(),
+      db.collection("serviceRequests").where("propertyManagerOrganizationId", "==", membership.organizationId).get(),
+    ]);
+    const open = requestSnapshot.docs.filter((item) => !["completed", "canceled"].includes(item.data().status)).length;
+    const completed = requestSnapshot.docs.filter((item) => item.data().status === "completed").length;
+    const acceptedVendors = new Set(requestSnapshot.docs.map((item) => item.data().acceptedVendorOrganizationId).filter(Boolean)).size;
+    const firstName = (user.fullName || user.email).split(/[ @]/)[0];
+    const metrics = [["Active properties", propertiesSnapshot.size, Building2], ["Open requests", open, ClipboardList], ["Accepted providers", acceptedVendors, BadgeCheck], ["Completed requests", completed, Store]] as const;
+    return <div><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-semibold text-emerald-700">{mode === "admin" ? "Firebase organization administration" : "Firebase property operations"}</p><h1 className="mt-1 text-4xl font-semibold">Good to see you, {firstName}.</h1><p className="mt-2 text-sm text-slate-500">Manage {membership.organizationName} with organization-scoped Firebase records.</p></div>{can(user, "service_requests:create", membership.organizationId) ? <Link href="/property-manager/service-requests" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Request service <ArrowUpRight className="ml-2 size-4"/></Link> : null}</div><section className="mt-6 grid gap-3 sm:grid-cols-3"><Link href="/property-manager/service-requests" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><p className="font-bold text-emerald-900">Service requests</p><p className="mt-2 text-xs text-emerald-800/75">Submit and follow safe request results.</p></Link><Link href="/properties" className="rounded-2xl border bg-white p-5"><p className="font-bold">Properties</p><p className="mt-2 text-xs text-slate-500">Manage private locations and service areas.</p></Link><Link href="/marketplace" className="rounded-2xl border bg-white p-5"><p className="font-bold">Local Marketplace</p><p className="mt-2 text-xs text-slate-500">Browse sanitized, eligible public profiles.</p></Link></section><section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex justify-between"><div><p className="text-sm text-slate-500">{label}</p><p className="mt-3 text-3xl font-bold">{value}</p></div><Icon className="size-5 text-emerald-700"/></div></article>)}</section><section className="mt-6 rounded-2xl bg-slate-950 p-6 text-white"><p className="text-xs font-bold uppercase tracking-wider text-emerald-400">Workspace access</p><h2 className="mt-3 text-xl font-bold capitalize">{membership.role.replaceAll("_", " ")}</h2><p className="mt-3 text-sm text-slate-400">Every server action revalidates your Firebase session, organization membership, and operation.</p></section></div>;
+  }
   const [counts,impact] = await Promise.all([getCounts(membership.organizationId),getOrganizationImpactSummary(membership.organizationId,getImpactRange("30d"))]);
   const firstName = (user.fullName || user.email).split(/[ @]/)[0];
   const metrics = [

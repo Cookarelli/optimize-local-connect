@@ -8,9 +8,27 @@ import { claimFounderFromVerifiedStripe, releaseFounderReservation } from "@/src
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { getStripeClient } from "@/src/lib/stripe/client";
 import { evaluateOrganizationActivation } from "@/src/lib/vendor-memberships/lifecycle";
+import { expireFirebaseMembershipCheckout, processVerifiedFirebaseMembershipEvent } from "@/src/lib/firebase/memberships";
+import { rebuildPublicMarketplaceProjection } from "@/src/lib/firebase/vendor-profiles";
+import { Timestamp } from "firebase-admin/firestore";
+import { getPlatformFirestore } from "@/src/lib/firebase/admin";
 
 const uuid=z.string().uuid();
-export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId?:string;guestClaimId?:string;customerId:string;founderCategoryId?:string;founderCategorySlug?:string;founderReservationId?:string;onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
+export class FirebaseMembershipEventError extends Error {
+  constructor(public readonly eventId:string, public readonly organizationId:string, public readonly membershipId:string, cause:unknown) {
+    super("Firebase membership event processing failed.", { cause });
+  }
+}
+
+async function recordFirebaseMembershipFailure(event:Stripe.Event, metadata:{organizationId:string;membershipId:string}, error:unknown){
+  const now=Timestamp.now();
+  await getPlatformFirestore().doc(`paymentProviderEvents/stripe:${event.id}`).set({
+    provider:"stripe",providerEventId:event.id,eventType:event.type,providerObjectId:(event.data.object as {id?:string}).id??null,
+    organizationId:metadata.organizationId,membershipId:metadata.membershipId,verificationStatus:"processing_failed",processedAt:null,
+    errorCode:error instanceof Error?error.name:"UnknownError",createdAt:now,updatedAt:now,
+  },{merge:true});
+}
+export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId?:string;guestClaimId?:string;customerId:string;founderCategoryId?:string;founderCategorySlug?:string;founderReservationId?:string;operationalBackend?:"firebase";onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
   const plan=getVendorPlan(input.planKey); if(!plan) throw new Error("Unknown vendor membership plan.");
   const priceId=getVendorPlanPriceId(plan); const productId=getVendorPlanProductId(plan); const stripeClient=getStripeClient();
   const price=await stripeClient.prices.retrieve(priceId);
@@ -48,6 +66,7 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
     ...(input.guestClaimId ? { guest_claim_id:input.guestClaimId } : {}),
     membership_record_id:input.membershipId,
     membership_tier:plan.key,
+    ...(input.operationalBackend ? { operational_backend: input.operationalBackend } : {}),
     ...(input.founderCategoryId ? { founder_category_id:input.founderCategoryId } : {}),
     ...(input.founderCategorySlug ? { founder_category_slug:input.founderCategorySlug } : {}),
     ...(input.founderReservationId ? { founder_reservation_id:input.founderReservationId } : {}),
@@ -84,6 +103,16 @@ function founderMetadata(metadata: Stripe.Metadata | null | undefined) {
   return { membershipId, organizationId, categorySlug, reservationId };
 }
 
+function firebaseMembershipMetadata(metadata: Stripe.Metadata | null | undefined) {
+  if (metadata?.operational_backend !== "firebase") return null;
+  const membershipId = metadata.membership_record_id ?? metadata.vendor_membership_id;
+  const organizationId = metadata.organization_id ?? metadata.vendor_organization_id;
+  const tier = metadata.membership_tier ?? metadata.vendor_plan_key;
+  const plan = tier ? getVendorPlan(tier) : undefined;
+  if (!membershipId || !organizationId || !plan || plan.key === "founding_partner") return null;
+  return { membershipId, organizationId, tier: plan.key };
+}
+
 export async function processVendorMembershipStripeEvent(event:Stripe.Event,payload:unknown){
   if(!MEMBERSHIP_STRIPE_EVENTS.has(event.type)) return false;
   if(event.type==="checkout.session.expired"){
@@ -91,6 +120,12 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
     const founder=founderMetadata(session.metadata);
     if(founder){
       await releaseFounderReservation({categorySlug:founder.categorySlug,membershipId:founder.membershipId,reservationId:founder.reservationId,eventId:event.id});
+      return true;
+    }
+    const firebaseMembership=firebaseMembershipMetadata(session.metadata);
+    if(firebaseMembership){
+      try{await expireFirebaseMembershipCheckout({eventId:event.id,membershipId:firebaseMembership.membershipId,organizationId:firebaseMembership.organizationId,checkoutSessionId:session.id});}
+      catch(error){await recordFirebaseMembershipFailure(event,firebaseMembership,error);throw new FirebaseMembershipEventError(event.id,firebaseMembership.organizationId,firebaseMembership.membershipId,error);}
       return true;
     }
     const admin=createSupabaseAdminClient();
@@ -116,10 +151,10 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
   if(!subscriptionId?.startsWith("sub_")) return false;
   const subscription=await stripeClient.subscriptions.retrieve(subscriptionId,{expand:["items.data.price"]});
   const metadata=subscription.metadata;
-  const item=subscription.items.data[0]; const priceId=typeof item?.price==="string"?item.price:item?.price.id; const amount=typeof item?.price==="string"?null:item?.price.unit_amount; const interval=typeof item?.price==="string"?null:item?.price.recurring?.interval;
+  const item=subscription.items.data[0]; const priceId=typeof item?.price==="string"?item.price:item?.price.id; const amount=typeof item?.price==="string"?null:item?.price.unit_amount; const interval=typeof item?.price==="string"?null:item?.price.recurring?.interval; const productId=typeof item?.price==="string"?null:typeof item?.price.product==="string"?item.price.product:item?.price.product?.id??null;
   const plan=VENDOR_MEMBERSHIP_PLANS.find(candidate=>getVendorPlanPriceId(candidate)===priceId);if(!plan)return false;
-  const expectedPrice=getVendorPlanPriceId(plan); const customerId=typeof subscription.customer==="string"?subscription.customer:subscription.customer.id;
-  if(subscription.items.data.length!==1||item?.quantity!==1||priceId!==expectedPrice||amount!==plan.amountCents||interval!==plan.interval||subscription.currency.toUpperCase()!==plan.currency) throw new Error("Stripe subscription does not match the configured vendor plan.");
+  const expectedPrice=getVendorPlanPriceId(plan); const expectedProduct=getVendorPlanProductId(plan); const customerId=typeof subscription.customer==="string"?subscription.customer:subscription.customer.id;
+  if(subscription.items.data.length!==1||item?.quantity!==1||priceId!==expectedPrice||productId!==expectedProduct||amount!==plan.amountCents||interval!==plan.interval||subscription.currency.toUpperCase()!==plan.currency) throw new Error("Stripe subscription does not match the configured vendor plan.");
   const founder=founderMetadata(metadata);
   if(founder){
     if(plan.key!=="founding_partner"||!priceId||amount===null) throw new Error("Stripe subscription does not match the Founder plan.");
@@ -128,6 +163,22 @@ export async function processVendorMembershipStripeEvent(event:Stripe.Event,payl
     const periodEnd=subscriptionPeriodEnd(subscription);
     if(!periodEnd) throw new Error("Stripe Founder subscription has no current period end.");
     await claimFounderFromVerifiedStripe({eventId:event.id,eventType:event.type,categorySlug:founder.categorySlug,organizationId:founder.organizationId,membershipId:founder.membershipId,reservationId:founder.reservationId,checkoutSessionId,subscriptionId:subscription.id,customerId,priceId,status:founderStatus as "active"|"trialing"|"past_due",periodEnd:new Date(periodEnd*1000),paidAt:new Date(subscription.start_date*1000),actualAmountPaidCents:amount,currency:subscription.currency.toUpperCase()});
+    return true;
+  }
+  const firebaseMembership=firebaseMembershipMetadata(metadata);
+  if(firebaseMembership){
+    try{
+      if(plan.key!==firebaseMembership.tier||!priceId||amount===null) throw new Error("Stripe subscription does not match the Firebase membership metadata.");
+      const periodEnd=subscriptionPeriodEnd(subscription);
+      await processVerifiedFirebaseMembershipEvent({
+        eventId:event.id,eventType:event.type,providerObjectId:subscription.id,
+        organizationId:firebaseMembership.organizationId,membershipId:firebaseMembership.membershipId,tier:firebaseMembership.tier,
+        status:membershipStatusFromStripe(event.type,subscription.status),customerId,subscriptionId:subscription.id,checkoutSessionId,
+        priceId,amountCents:amount,currency:subscription.currency.toUpperCase(),currentPeriodEnd:periodEnd?new Date(periodEnd*1000):null,
+        cancelAtPeriodEnd:subscription.cancel_at_period_end,
+      });
+      await rebuildPublicMarketplaceProjection(firebaseMembership.organizationId);
+    }catch(error){await recordFirebaseMembershipFailure(event,firebaseMembership,error);throw new FirebaseMembershipEventError(event.id,firebaseMembership.organizationId,firebaseMembership.membershipId,error);}
     return true;
   }
   const admin=createSupabaseAdminClient();

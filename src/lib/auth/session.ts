@@ -2,6 +2,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { AppUser } from "@/src/domain/auth/types";
 import type { Role } from "@/src/domain/auth/roles";
+import { getFirebaseCurrentUser } from "@/src/lib/firebase/session";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
 type MembershipRow = {
@@ -15,6 +17,7 @@ type MembershipRow = {
 };
 
 export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
+  if (isFirebaseOperationalBackend()) return getFirebaseCurrentUser();
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

@@ -1,10 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { getAppOrigin } from "@/src/lib/auth/origin";
 import { isVendorEnrollmentPath, safeInternalPath } from "@/src/lib/auth/routing";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { FIREBASE_SESSION_COOKIE, isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 
 export type AuthState = {
   status: "idle" | "error" | "success";
@@ -86,6 +88,10 @@ export async function signInWithGoogle(formData: FormData) {
 }
 
 export async function signOut() {
+  if (isFirebaseOperationalBackend()) {
+    (await cookies()).delete(FIREBASE_SESSION_COOKIE);
+    redirect("/");
+  }
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/");

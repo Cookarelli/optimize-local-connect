@@ -1,20 +1,52 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /publicFounderCategories/{slug} {
-      allow get, list: if resource.data.keys().hasOnly([
-        'displayName',
-        'slug',
-        'displayOrder',
-        'status',
-        'publicBusinessName'
-      ]);
-      allow create, update, delete: if false;
-    }
+    function signedIn() { return request.auth != null; }
+    function accessId(organizationId) { return organizationId + ':' + request.auth.uid; }
+    function accessPath(organizationId) { return /databases/$(database)/documents/organizationMemberships/$(accessId(organizationId)); }
+    function activeMember(organizationId) { return signedIn() && exists(accessPath(organizationId)) && get(accessPath(organizationId)).data.status == 'active'; }
+    function hasRole(organizationId, roles) { return activeMember(organizationId) && get(accessPath(organizationId)).data.role in roles; }
+    function platformAdmin() { return signedIn() && exists(/databases/$(database)/documents/platformAdmins/$(request.auth.uid)) && get(/databases/$(database)/documents/platformAdmins/$(request.auth.uid)).data.status == 'active'; }
+    function safeRequestVendor(data) { return data.activeAssignmentId != null && exists(/databases/$(database)/documents/serviceRequestAssignments/$(data.activeAssignmentId)) && activeMember(get(/databases/$(database)/documents/serviceRequestAssignments/$(data.activeAssignmentId)).data.vendorOrganizationId); }
+    function requestRead(data) { return platformAdmin() || activeMember(data.propertyManagerOrganizationId) || safeRequestVendor(data); }
 
-    match /{document=**} {
-      allow read, write: if false;
+    match /publicFounderCategories/{slug} {
+      allow get, list: if resource.data.keys().hasOnly(['displayName','slug','displayOrder','status','publicBusinessName']);
+      allow write: if false;
     }
+    match /publicMarketplaceVendors/{organizationId} {
+      allow get, list: if resource.data.keys().hasOnly(['organizationId','businessName','slug','description','logoUrl','featuredImageUrl','primaryCategorySlug','primaryCategoryName','categorySlugs','categoryNames','services','serviceAreaKeys','serviceAreas','serviceRadiusMiles','publicPhone','publicEmail','websiteUrl','googleBusinessProfileUrl','operatingHours','languages','yearsInBusiness','customerTypes','offersFreeEstimates','offersFinancing','emergencyService','licenseListed','insuranceStatus','connectMemberBenefit','membershipTier','membershipName','membershipPriority','badgeLabel','isFoundingMember','searchTokens','matchingKeys','publicationVersion','publishedAt']);
+      allow write: if false;
+    }
+    match /users/{uid} { allow get: if signedIn() && (request.auth.uid == uid || platformAdmin()); allow list, create, update, delete: if false; }
+    match /platformAdmins/{uid} { allow get: if platformAdmin(); allow list, write: if false; }
+    match /organizations/{organizationId} { allow get: if platformAdmin() || activeMember(organizationId); allow list: if platformAdmin(); allow write: if false; }
+    match /organizationMemberships/{membershipId} {
+      allow get, list: if platformAdmin() || (signedIn() && resource.data.userId == request.auth.uid) || hasRole(resource.data.organizationId, ['owner','admin']);
+      allow write: if false;
+    }
+    match /organizationInvitations/{invitationId} { allow read: if platformAdmin() || hasRole(resource.data.organizationId, ['owner','admin']); allow write: if false; }
+    match /serviceCategories/{categoryId} { allow read: if signedIn(); allow write: if false; }
+    match /serviceAreas/{areaId} { allow read: if signedIn(); allow write: if false; }
+    match /memberships/{membershipId} { allow read: if platformAdmin() || hasRole(resource.data.organizationId, ['owner','admin']); allow write: if false; }
+    match /founderCategories/{documentId} { allow read: if platformAdmin(); allow write: if false; }
+    match /founderOccupancies/{documentId} { allow read: if platformAdmin(); allow write: if false; }
+    match /founderPayments/{documentId} { allow read: if platformAdmin(); allow write: if false; }
+    match /founderPaymentEvents/{documentId} { allow read: if platformAdmin(); allow write: if false; }
+    match /paymentProviderEvents/{documentId} { allow read: if platformAdmin(); allow write: if false; }
+    match /vendorProfiles/{organizationId} { allow read: if platformAdmin() || activeMember(organizationId); allow write: if false; }
+    match /properties/{propertyId} { allow read: if platformAdmin() || activeMember(resource.data.organizationId); allow write: if false; }
+    match /serviceRequests/{requestId} {
+      allow read: if requestRead(resource.data); allow write: if false;
+      match /events/{eventId} {
+        function parentRequest() { return get(/databases/$(database)/documents/serviceRequests/$(requestId)).data; }
+        allow read: if platformAdmin() || activeMember(parentRequest().propertyManagerOrganizationId) || (resource.data.vendorVisible == true && safeRequestVendor(parentRequest()));
+        allow write: if false;
+      }
+    }
+    match /serviceRequestPrivate/{requestId} { allow read: if platformAdmin() || activeMember(resource.data.propertyManagerOrganizationId) || (resource.data.acceptedVendorOrganizationId != null && activeMember(resource.data.acceptedVendorOrganizationId)); allow write: if false; }
+    match /serviceRequestAssignments/{assignmentId} { allow read: if platformAdmin() || activeMember(resource.data.propertyManagerOrganizationId) || activeMember(resource.data.vendorOrganizationId); allow write: if false; }
+    match /notifications/{notificationId} { allow read: if platformAdmin() || (signedIn() && resource.data.recipientUserId == request.auth.uid) || (resource.data.recipientOrganizationId != null && activeMember(resource.data.recipientOrganizationId)); allow write: if false; }
+    match /{document=**} { allow read, write: if false; }
   }
 }

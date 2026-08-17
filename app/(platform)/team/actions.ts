@@ -9,12 +9,15 @@ import { getAppOrigin } from "@/src/lib/auth/origin";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { createFirebaseOrganizationInvitation } from "@/src/lib/firebase/invitations";
+import { EMAIL_PROVIDER_STATUS, queueNotification } from "@/src/lib/firebase/notifications";
 
-export type InviteState = { status: "idle" | "error" | "success"; message?: string };
+export type InviteState = { status: "idle" | "error" | "success"; message?: string; invitationLink?: string };
 
 const invitationSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
-  role: z.enum(["owner", "admin", "property_manager", "vendor", "technician", "future_resident"]),
+  role: z.enum(["owner", "admin", "manager", "staff", "property_manager", "vendor", "technician", "future_resident"]),
 });
 
 export async function inviteOrganizationMember(_state: InviteState, formData: FormData): Promise<InviteState> {
@@ -27,6 +30,19 @@ export async function inviteOrganizationMember(_state: InviteState, formData: Fo
   authorize(user, "members:invite", membership.organizationId);
   if (!getInvitableRoles(membership.role, membership.organizationType).includes(input.data.role)) {
     return { status: "error", message: "You cannot assign that role." };
+  }
+
+  if (isFirebaseOperationalBackend()) {
+    try {
+      const invitation = await createFirebaseOrganizationInvitation({ user, organizationId: membership.organizationId, email: input.data.email, role: input.data.role });
+      const origin = await getAppOrigin();
+      const invitationLink = `${origin}/accept-invite?token=${encodeURIComponent(invitation.rawToken)}`;
+      await queueNotification({ type: "organization_invitation", entityId: invitation.invitationId, version: "1", recipientEmail: input.data.email, recipientOrganizationId: membership.organizationId, templateKey: "organization-invitation", templateData: { invitationLink, organizationName: membership.organizationName, role: input.data.role } });
+      revalidatePath("/team");
+      return { status: "success", message: `Invitation queued for ${input.data.email}. ${EMAIL_PROVIDER_STATUS}`, invitationLink };
+    } catch {
+      return { status: "error", message: "The Firebase invitation could not be created." };
+    }
   }
 
   const rawToken = `${crypto.randomUUID()}${crypto.randomUUID()}`;

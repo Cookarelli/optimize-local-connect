@@ -113,6 +113,42 @@ test("CLA manual grant is idempotent and fabricates no payment metadata", async 
   assert.equal((await db.collection("founderPayments").get()).size, 0);
 });
 
+test("Founder operationalization enriches Flooring and CLA in place without changing payment authority", async () => {
+  const flooring = await service.reconcileLegacyStripeFounder({
+    categorySlug: "flooring", businessName: "Flooring Trends", customerEmail: "verified@example.test",
+    checkoutSessionId: "cs_live_preserved", subscriptionId: "sub_live_preserved", customerId: "cus_live_preserved", priceId: "price_live_preserved",
+    status: "active", periodEnd: new Date("2027-08-15T12:00:00Z"), paidAt: new Date("2026-08-15T12:00:00Z"), actualAmountPaidCents: 49_900, currency: "USD",
+  }, db);
+  const cla = await service.manuallyGrantFounder({ categorySlug: "roofing", businessName: "CLA Exteriors" }, db);
+  const { ensureFounderOperationalProfiles } = await import("../src/lib/firebase/vendor-profiles");
+  const operations = await ensureFounderOperationalProfiles(db, true);
+  assert.equal(operations.find((item) => item.organizationId === flooring.organizationId)?.action, "create");
+  assert.equal(operations.find((item) => item.organizationId === cla.organizationId)?.action, "create");
+  assert.equal((await db.doc(`organizations/${flooring.organizationId}`).get()).data()?.activeMembershipId, flooring.membershipId);
+  assert.equal((await db.doc(`memberships/${flooring.membershipId}`).get()).data()?.stripe.checkoutSessionId, "cs_live_preserved");
+  assert.equal((await db.doc(`memberships/${cla.membershipId}`).get()).data()?.stripe, null);
+  assert.equal((await db.doc(`memberships/${cla.membershipId}`).get()).data()?.paypal, null);
+  assert.equal((await db.doc(`vendorProfiles/${flooring.organizationId}`).get()).data()?.publicationState, "unpublished");
+  assert.equal((await db.doc(`vendorProfiles/${cla.organizationId}`).get()).data()?.publicationState, "unpublished");
+  assert.equal((await db.collection("memberships").where("categorySlug", "==", "flooring").get()).size, 1);
+  assert.equal((await db.collection("memberships").where("categorySlug", "==", "roofing").get()).size, 1);
+  assert.equal((await db.doc("founderCategories/appliance-repair").get()).data()?.status, "reserved");
+});
+
+test("Founder operationalization refuses to rebuild an incomplete anchor", async () => {
+  await service.reconcileLegacyStripeFounder({
+    categorySlug: "flooring", businessName: "Flooring Trends", customerEmail: "verified@example.test",
+    checkoutSessionId: "cs_live_guard", subscriptionId: "sub_live_guard", customerId: "cus_live_guard", priceId: "price_live_guard",
+    status: "active", periodEnd: new Date("2027-08-15T12:00:00Z"), paidAt: new Date("2026-08-15T12:00:00Z"), actualAmountPaidCents: 49_900, currency: "USD",
+  }, db);
+  await service.manuallyGrantFounder({ categorySlug: "roofing", businessName: "CLA Exteriors" }, db);
+  const grant = await service.manuallyGrantFounder({ categorySlug: "moving", businessName: "Anchor Guard Co" }, db);
+  await db.doc(`founderOccupancies/${grant.organizationId}`).delete();
+  const { ensureFounderOperationalProfiles } = await import("../src/lib/firebase/vendor-profiles");
+  await assert.rejects(() => ensureFounderOperationalProfiles(db, true), /will not rebuild/i);
+  assert.equal((await db.doc(`vendorProfiles/${grant.organizationId}`).get()).exists, false);
+});
+
 test("PayPal reconciliation records a discounted actual amount and rejects duplicate or occupied claims", async () => {
   await service.reconcilePaypalFounder({ categorySlug: "fencing", businessName: "Fence Co", contactEmail: "owner@fence.example", paypalReferenceId: "PAYPAL-REAL-001", actualAmountPaidCents: 39_900, currency: "USD", paidAt: new Date("2026-08-16T12:00:00Z") }, db);
   const payment = (await db.collection("founderPayments").where("categorySlug", "==", "fencing").get()).docs[0]?.data();

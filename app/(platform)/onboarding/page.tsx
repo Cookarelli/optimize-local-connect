@@ -7,6 +7,7 @@ import { getVendorPlan, normalizeVendorPlanKey } from "@/src/domain/vendor-membe
 import { getRoleHome } from "@/src/lib/auth/routing";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,10 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   if (!plan) {
     if (user.isSuperAdmin || user.memberships.length) redirect(getRoleHome(user));
     return <section className="mx-auto max-w-2xl py-20 text-center"><span className="mx-auto grid size-14 place-items-center rounded-2xl bg-amber-100"><Clock3 className="size-6 text-amber-800" /></span><h1 className="mt-6 text-3xl font-semibold tracking-tight">Choose how you are joining Connect.</h1><p className="mt-3 text-slate-600">Select a vendor membership to create a new service-business workspace, or ask an existing organization owner for an invitation.</p><Link href="/pricing" className="mt-7 inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-bold text-white">View vendor memberships</Link></section>;
+  }
+
+  if (isFirebaseOperationalBackend()) {
+    return <main className="min-h-dvh bg-[#f7f8f4] px-5 py-10 text-slate-950 sm:py-16"><div className="mx-auto max-w-3xl"><div className="mb-8 flex items-center justify-between"><Logo/><span className="inline-flex items-center gap-2 text-xs font-bold text-slate-500"><LockKeyhole className="size-4"/>Private Firebase enrollment</span></div><section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-10"><span className="grid size-12 place-items-center rounded-2xl bg-emerald-50"><Building2 className="size-6 text-emerald-700"/></span><p className="mt-7 text-xs font-black uppercase tracking-[.16em] text-emerald-700">Create your vendor workspace</p><h1 className="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-5xl">Business details before billing.</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">An unpublished Firebase organization and pending {plan.name} membership are created before test Checkout. Payment never publishes a profile automatically.</p><div className="mt-6 rounded-2xl bg-slate-950 p-5 text-white"><p className="text-xs font-black uppercase tracking-wider text-emerald-400">Selected membership</p><div className="mt-2 flex items-end justify-between gap-4"><p className="text-xl font-bold">{plan.name}</p><p className="text-lg font-bold">${plan.amountCents/100}/{plan.interval}</p></div></div><VendorOrganizationSignupForm plan={plan.key} defaults={{ contactName: user.fullName ?? "" }} /></section></div></main>;
   }
 
   const admin = createSupabaseAdminClient();

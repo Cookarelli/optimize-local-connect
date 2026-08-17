@@ -6,6 +6,8 @@ import { FoundingPartnerLogo } from "@/src/components/marketplace/founding-partn
 import { PublicMarketplaceShell } from "@/src/components/marketplace/public-marketplace-shell";
 import { parsePublicFoundingPartnerProfile, type PublicFoundingPartnerProfile } from "@/src/domain/vendor-memberships/marketplace";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { getFirebaseMarketplaceVendor } from "@/src/lib/firebase/marketplace";
 
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }> };
@@ -14,6 +16,7 @@ function statusLabel(value: string | null) { return value ? value.replaceAll("_"
 
 async function getProfile(slug: string): Promise<PublicFoundingPartnerProfile | null> {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) return null;
+  if (isFirebaseOperationalBackend()) return getFirebaseMarketplaceVendor(slug);
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("get_public_vendor_profile", { target_slug: slug });
   if (error || !data) return null;

@@ -1,4 +1,31 @@
 "use server";
-import { revalidatePath } from "next/cache";import { z } from "zod";import { requireUser } from "@/src/lib/auth/session";import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
-const schema=z.object({id:z.string().uuid(),action:z.enum(["accept","decline"]),reason:z.string().trim().max(500).optional()});
-export async function respondToOpportunity(formData:FormData){const user=await requireUser();const input=schema.parse({id:formData.get("id"),action:formData.get("action"),reason:formData.get("reason")||undefined});const vendor=user.memberships.find(m=>m.organizationType==="vendor");if(!vendor)throw new Error("Vendor access required.");const db=createSupabaseAdminClient();const {data:request}=await db.from("property_manager_service_requests").select("id,status,assigned_vendor_organization_id,accepted_vendor_organization_id").eq("id",input.id).single();if(!request||request.assigned_vendor_organization_id!==vendor.organizationId)throw new Error("Opportunity is unavailable.");if(request.accepted_vendor_organization_id&&request.accepted_vendor_organization_id!==vendor.organizationId)throw new Error("Opportunity was already accepted.");if(input.action==="accept"){if(request.status==="assigned"&&request.accepted_vendor_organization_id===vendor.organizationId)return;const {error}=await db.from("property_manager_service_requests").update({status:"assigned",accepted_at:new Date().toISOString(),accepted_vendor_organization_id:vendor.organizationId,declined_at:null,declined_vendor_organization_id:null,decline_reason:null}).eq("id",input.id).eq("assigned_vendor_organization_id",vendor.organizationId);if(error)throw new Error("Unable to accept opportunity.");await db.from("property_manager_service_request_history").insert({request_id:input.id,actor_user_id:user.id,status:"assigned",note:"Vendor accepted opportunity",vendor_visible:true});}else{if(request.status==="reviewing"&&request.assigned_vendor_organization_id===null)return;const {error}=await db.from("property_manager_service_requests").update({status:"reviewing",assigned_vendor_organization_id:null,declined_at:new Date().toISOString(),declined_vendor_organization_id:vendor.organizationId,decline_reason:input.reason??null}).eq("id",input.id).eq("assigned_vendor_organization_id",vendor.organizationId);if(error)throw new Error("Unable to decline opportunity.");await db.from("property_manager_service_request_history").insert({request_id:input.id,actor_user_id:user.id,status:"reviewing",note:"Vendor declined opportunity",vendor_visible:false});}revalidatePath("/vendor/opportunities");revalidatePath(`/vendor/opportunities/${input.id}`);}
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { requireUser } from "@/src/lib/auth/session";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { respondToFirebaseOpportunity, transitionFirebaseServiceRequest } from "@/src/lib/firebase/service-requests";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+
+const schema=z.object({id:z.string().min(3).max(200),action:z.enum(["accept","decline","in_progress","completed"]),reason:z.string().trim().max(500).optional()});
+export async function respondToOpportunity(formData:FormData){
+  const user=await requireUser();const input=schema.parse({id:formData.get("id"),action:formData.get("action"),reason:formData.get("reason")||undefined});const vendor=user.memberships.find(m=>m.organizationType==="vendor");if(!vendor)throw new Error("Vendor access required.");
+  if(isFirebaseOperationalBackend()){
+    if(input.action==="accept"||input.action==="decline")await respondToFirebaseOpportunity({user,requestId:input.id,action:input.action,reason:input.reason});
+    else await transitionFirebaseServiceRequest({user,requestId:input.id,status:input.action,note:input.reason});
+    revalidatePath("/vendor/opportunities");revalidatePath(`/vendor/opportunities/${input.id}`);return;
+  }
+  if(input.action==="in_progress"||input.action==="completed")throw new Error("That transition is available after the Firebase operational cutover.");
+  const db=createSupabaseAdminClient();const {data:request}=await db.from("property_manager_service_requests").select("id,status,assigned_vendor_organization_id,accepted_vendor_organization_id").eq("id",input.id).single();
+  if(!request||request.assigned_vendor_organization_id!==vendor.organizationId)throw new Error("Opportunity is unavailable.");
+  if(request.accepted_vendor_organization_id&&request.accepted_vendor_organization_id!==vendor.organizationId)throw new Error("Opportunity was already accepted.");
+  if(input.action==="accept"){
+    if(request.status==="assigned"&&request.accepted_vendor_organization_id===vendor.organizationId)return;
+    const {error}=await db.from("property_manager_service_requests").update({status:"assigned",accepted_at:new Date().toISOString(),accepted_vendor_organization_id:vendor.organizationId,declined_at:null,declined_vendor_organization_id:null,decline_reason:null}).eq("id",input.id).eq("assigned_vendor_organization_id",vendor.organizationId);if(error)throw new Error("Unable to accept opportunity.");
+    await db.from("property_manager_service_request_history").insert({request_id:input.id,actor_user_id:user.id,status:"assigned",note:"Vendor accepted opportunity",vendor_visible:true});
+  }else{
+    if(request.status==="reviewing"&&request.assigned_vendor_organization_id===null)return;
+    const {error}=await db.from("property_manager_service_requests").update({status:"reviewing",assigned_vendor_organization_id:null,declined_at:new Date().toISOString(),declined_vendor_organization_id:vendor.organizationId,decline_reason:input.reason??null}).eq("id",input.id).eq("assigned_vendor_organization_id",vendor.organizationId);if(error)throw new Error("Unable to decline opportunity.");
+    await db.from("property_manager_service_request_history").insert({request_id:input.id,actor_user_id:user.id,status:"reviewing",note:"Vendor declined opportunity",vendor_visible:false});
+  }
+  revalidatePath("/vendor/opportunities");revalidatePath(`/vendor/opportunities/${input.id}`);
+}

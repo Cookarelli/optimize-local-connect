@@ -3,6 +3,8 @@ import { PageHeader } from "@/src/components/ui/page-header";
 import { authorize } from "@/src/lib/auth/authorization";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { FirebasePropertyForm } from "@/src/components/firebase-platform/property-form";
 
 const inputClass = "mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 
@@ -11,6 +13,7 @@ export default async function NewPropertyPage() {
   const membership = user.memberships[0];
   if (!membership) return null;
   authorize(user, "properties:create", membership.organizationId);
+  if (isFirebaseOperationalBackend()) return <FirebasePropertyForm membership={membership} />;
   const supabase = await createSupabaseServerClient();
   const { data: markets, error } = await supabase.from("organization_markets").select("market_id, markets(name, market_cities(city_id, is_primary, cities(name, state_code)))").eq("organization_id", membership.organizationId);
   if (error) throw new Error(error.message);

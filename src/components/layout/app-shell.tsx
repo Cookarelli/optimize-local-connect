@@ -22,6 +22,8 @@ import { Logo } from "@/src/components/brand/logo";
 import { MissionSignature } from "@/src/components/brand/mission-signature";
 import { getRoleLabel } from "@/src/domain/platform/terminology";
 import { PROPERTY_MANAGEMENT_VERTICAL } from "@/src/domain/verticals/registry";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { FirebaseSignOutButton } from "@/src/components/auth/firebase-sign-out-button";
 
 const nav: { label: string; href: string; icon: typeof LayoutDashboard; permission?: Permission }[] = [
   { label: "Properties", href: "/properties", icon: Building2, permission: "properties:view" },
@@ -35,11 +37,23 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
   const activeMembership = user.memberships[0];
   const displayName = user.fullName || user.email.split("@")[0];
   const organizationId = activeMembership?.organizationId;
+  const firebaseBackend = isFirebaseOperationalBackend();
+  const workspaceNav = firebaseBackend && activeMembership?.organizationType === "vendor"
+    ? [
+        { label: "Opportunities", href: "/vendor/opportunities", icon: ClipboardList },
+        { label: "Marketplace Profile", href: "/vendor/profile", icon: Store },
+        { label: "Membership", href: "/vendor/membership", icon: CreditCard },
+        { label: "Team", href: "/team", icon: Users, permission: "members:view" as Permission },
+        { label: "Local Marketplace", href: "/marketplace", icon: Store },
+      ]
+    : firebaseBackend && activeMembership?.organizationType === "property_management"
+      ? nav.map((item) => item.label === "Requests" ? { ...item, href: "/property-manager/service-requests" } : item)
+      : nav;
   const visibleNav = [
     { label: "Overview", href: getRoleHome(user), icon: LayoutDashboard },
-    ...(user.isSuperAdmin ? [{ label: "Platform Control Center", href: "/admin", icon: Award }, { label: "Founding Members", href: "/admin/founders", icon: Award }] : []),
-    ...(activeMembership && ["owner", "admin"].includes(activeMembership.role) ? [{ label: "Connected Payments", href: "/payments/connect", icon: CreditCard }] : []),
-    ...nav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
+    ...(user.isSuperAdmin ? [{ label: "Platform Control Center", href: "/admin", icon: Award }, { label: "Vendor Network", href: "/admin/vendor-network", icon: Store }, { label: "Founding Members", href: "/admin/founders", icon: Award }] : []),
+    ...(activeMembership && !firebaseBackend && ["owner", "admin"].includes(activeMembership.role) ? [{ label: "Connected Payments", href: "/payments/connect", icon: CreditCard }] : []),
+    ...workspaceNav.filter((item) => !item.permission || can(user, item.permission, organizationId)),
   ];
 
   return (
@@ -65,7 +79,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           <div className="mt-3 flex items-center gap-3 px-3">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">{displayName.slice(0, 1).toUpperCase()}</span>
             <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-slate-900">{displayName}</p><p className="truncate text-xs text-slate-500">{activeMembership ? getRoleLabel(activeMembership.role) : "Super Admin"}</p></div>
-            <form action={signOut}><button type="submit" className="rounded-lg p-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Sign out">Out</button></form>
+            {firebaseBackend ? <FirebaseSignOutButton/> : <form action={signOut}><button type="submit" className="rounded-lg p-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900" aria-label="Sign out">Out</button></form>}
           </div>
         </div>
       </aside>
@@ -77,7 +91,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
             {visibleNav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Icon className="size-4.5" />{label}</Link>)}
             <Link href="/settings" className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"><Settings className="size-4.5" />Settings</Link>
             <div className="px-3 py-3"><MissionSignature /></div>
-            <form action={signOut}><button type="submit" className="min-h-11 w-full rounded-xl px-3 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50">Sign out</button></form>
+            {firebaseBackend ? <FirebaseSignOutButton mobile/> : <form action={signOut}><button type="submit" className="min-h-11 w-full rounded-xl px-3 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50">Sign out</button></form>}
           </nav>
         </details>
       </header>

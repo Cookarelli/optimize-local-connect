@@ -5,6 +5,8 @@ import { z } from "zod";
 import { authorize } from "@/src/lib/auth/authorization";
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { createFirebaseProperty } from "@/src/lib/firebase/properties";
 
 const propertySchema = z.object({
   organizationId: z.string().uuid(),
@@ -19,6 +21,11 @@ const propertySchema = z.object({
 
 export async function createProperty(formData: FormData) {
   const user = await requireUser();
+  if (isFirebaseOperationalBackend()) {
+    const organizationId = z.string().min(3).max(200).parse(formData.get("organizationId"));
+    await createFirebaseProperty({ user, organizationId, name: z.string().trim().min(2).max(160).parse(formData.get("name")), addressLine1: z.string().trim().min(3).max(200).parse(formData.get("addressLine1")), addressLine2: z.string().trim().max(200).optional().parse(formData.get("addressLine2") || undefined), city: z.string().trim().min(2).max(120).parse(formData.get("city")), stateCode: z.string().trim().length(2).parse(formData.get("stateCode")), postalCode: z.string().trim().min(5).max(12).parse(formData.get("postalCode")) });
+    redirect("/properties");
+  }
   const input = propertySchema.parse({ organizationId: formData.get("organizationId"), marketId: formData.get("marketId"), cityId: formData.get("cityId"), name: formData.get("name"), addressLine1: formData.get("addressLine1"), addressLine2: formData.get("addressLine2") || undefined, postalCode: formData.get("postalCode"), unitCount: formData.get("unitCount") });
   authorize(user, "properties:create", input.organizationId);
   const supabase = await createSupabaseServerClient();

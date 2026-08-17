@@ -1,4 +1,15 @@
 {
-  "indexes": [],
+  "indexes": [
+    { "collectionGroup": "organizationMemberships", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "userId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "organizationMemberships", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "organizationId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "organizationInvitations", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "organizationId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "properties", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "organizationId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "name", "order": "ASCENDING" }] },
+    { "collectionGroup": "serviceRequests", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "propertyManagerOrganizationId", "order": "ASCENDING" }, { "fieldPath": "submittedAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "serviceRequestAssignments", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "vendorOrganizationId", "order": "ASCENDING" }, { "fieldPath": "assignedAt", "order": "DESCENDING" }] },
+    { "collectionGroup": "serviceRequestAssignments", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "requestId", "order": "ASCENDING" }, { "fieldPath": "vendorOrganizationId", "order": "ASCENDING" }] },
+    { "collectionGroup": "serviceRequestAssignments", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "requestId", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }] },
+    { "collectionGroup": "events", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "vendorVisible", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "ASCENDING" }] },
+    { "collectionGroup": "notifications", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }] }
+  ],
   "fieldOverrides": []
 }

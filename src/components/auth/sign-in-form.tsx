@@ -5,6 +5,7 @@ import { ArrowRight, KeyRound, LoaderCircle, Mail } from "lucide-react";
 import { signInWithGoogle, signInWithPassword, sendMagicLink, type AuthState } from "@/app/(auth)/sign-in/actions";
 import { AUTH_PROVIDERS } from "@/src/lib/auth/providers";
 import { Button } from "@/src/components/ui/button";
+import { FirebaseAuthForm } from "@/src/components/auth/firebase-auth-form";
 
 const initialState: AuthState = { status: "idle" };
 
@@ -17,6 +18,9 @@ export function SignInForm({ next = "/dashboard", allowSignup = false }: { next?
     sendMagicLink,
     initialState,
   );
+  if (process.env.NEXT_PUBLIC_OPERATIONAL_BACKEND === "firebase") {
+    return <FirebaseAuthForm next={next} allowSignup={allowSignup} />;
+  }
   const state = magicState.status !== "idle" ? magicState : passwordState;
 
   return (

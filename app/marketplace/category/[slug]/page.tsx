@@ -4,6 +4,8 @@ import { VendorMarketplaceDirectory, type MarketplaceDirectoryParams } from "@/s
 import { parsePublicMarketplaceFilters } from "@/src/domain/vendor-memberships/marketplace";
 import { FOUNDER_CATEGORY_CATALOG } from "@/src/domain/founder-categories/catalog";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { searchFirebaseMarketplace } from "@/src/lib/firebase/marketplace";
 
 export const dynamic = "force-dynamic";
 type Props = { params: Promise<{ slug: string }>; searchParams: Promise<MarketplaceDirectoryParams> };
@@ -12,6 +14,7 @@ function fallbackName(slug: string) { return slug.split("-").map(word => word.ch
 async function categoryName(slug: string) {
   const founderCategory = FOUNDER_CATEGORY_CATALOG.find((category) => category.slug === slug);
   if (founderCategory) return founderCategory.displayName;
+  if (isFirebaseOperationalBackend()) return (await searchFirebaseMarketplace({ category: slug, pageSize: 1 })).filters.categories.find(item => item.slug === slug)?.name ?? fallbackName(slug);
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.rpc("get_public_vendor_filters");
   const filters = parsePublicMarketplaceFilters(data);

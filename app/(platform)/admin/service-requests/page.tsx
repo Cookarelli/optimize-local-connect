@@ -2,11 +2,14 @@ import { adminCreateServiceRequest, managePropertyManagerServiceRequest } from "
 import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { requestCounts } from "@/src/domain/property-manager-requests/catalog";
+import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
+import { FirebaseAdminServiceRequests } from "@/src/components/firebase-platform/admin-service-requests";
 
 const input = "min-h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm";
 
 export default async function AdminServiceRequestsPage() {
   const user = await requireUser(); if (!user.isSuperAdmin) throw new Error("Super Admin access required.");
+  if (isFirebaseOperationalBackend()) return <FirebaseAdminServiceRequests user={user} />;
   const db = createSupabaseAdminClient();
   const [{ data: requests }, { data: vendors }, { data: categories }, { data: managers }] = await Promise.all([
     db.from("property_manager_service_requests").select("*,properties(name),vendor_categories(name),organizations(name)").order("created_at", { ascending: false }),

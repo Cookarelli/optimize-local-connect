@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function membershipPath(organizationId) { return /databases/(default)/documents/organizationMemberships/$(organizationId + ':' + request.auth.uid); }
+    function membership(organizationId) { return firestore.get(membershipPath(organizationId)); }
+    function activeRole(organizationId, roles) { return signedIn() && firestore.exists(membershipPath(organizationId)) && membership(organizationId).data.status == 'active' && membership(organizationId).data.role in roles; }
+    function imageType() { return request.resource.contentType.matches('image/(jpeg|png|webp)'); }
+    function vendorImageLimit() { return request.resource.metadata.assetKind == 'logo' && request.resource.size <= 2 * 1024 * 1024 || request.resource.metadata.assetKind == 'featured' && request.resource.size <= 8 * 1024 * 1024; }
+    function privateRequest(requestId) { return firestore.get(/databases/(default)/documents/serviceRequestPrivate/$(requestId)); }
+    match /vendor-media/{organizationId}/draft/{uid}/{assetId} {
+      allow read: if signedIn() && request.auth.uid == uid && activeRole(organizationId, ['owner','admin']);
+      allow create, update: if signedIn() && request.auth.uid == uid && activeRole(organizationId, ['owner','admin']) && imageType() && vendorImageLimit();
+      allow delete: if signedIn() && request.auth.uid == uid && activeRole(organizationId, ['owner','admin']);
+    }
+    match /vendor-media/{organizationId}/public/{version}/{assetId} { allow read: if true; allow write: if false; }
+    match /service-requests/{requestId}/private/{uid}/{assetId} {
+      allow read: if signedIn() && (activeRole(privateRequest(requestId).data.propertyManagerOrganizationId, ['owner','admin','manager','staff']) || privateRequest(requestId).data.acceptedVendorOrganizationId != null && activeRole(privateRequest(requestId).data.acceptedVendorOrganizationId, ['owner','admin','vendor','technician']));
+      allow create, update: if signedIn() && request.auth.uid == uid && activeRole(privateRequest(requestId).data.propertyManagerOrganizationId, ['owner','admin','manager','staff']) && ('service-requests/' + requestId + '/private/' + uid + '/' + assetId) in privateRequest(requestId).data.attachmentPaths && request.resource.size <= 10 * 1024 * 1024 && imageType() && request.resource.metadata.assetKind == 'request';
+      allow delete: if signedIn() && request.auth.uid == uid && activeRole(privateRequest(requestId).data.propertyManagerOrganizationId, ['owner','admin','manager','staff']);
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}
