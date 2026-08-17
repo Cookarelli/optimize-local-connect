@@ -65,6 +65,9 @@ FIREBASE_PROJECT_ID=optimize-local-staging \
 NEXT_PUBLIC_FIREBASE_API_KEY='<public-browser-api-key>' \
 FIREBASE_STAGING_TEST_PASSWORD='<synthetic-test-password>' \
 npm run verify:firebase:staging-rules -- --confirm-project=optimize-local-staging --firebase-cli-account=<firebase-account>
+
+FIREBASE_PROJECT_ID=optimize-local-staging \
+npm run configure:firebase:staging-auth -- --apply --confirm-project=optimize-local-staging --authorized-domain=<preview-hostname> --firebase-cli-account=<firebase-account>
 ```
 
 The seed uses deterministic fictional identities and documents. The workflow rehearsal covers decline, reassignment, acceptance, completion, notification deduplication, and worker claiming. The Rules verifier uses Firebase ID tokens against the deployed REST API and expects cross-tenant and privilege-escalation attempts to return HTTP 403.

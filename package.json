@@ -19,6 +19,7 @@
     "seed:firebase:staging": "node --conditions=react-server --import tsx scripts/seed-firebase-staging.ts",
     "rehearse:firebase:staging": "node --conditions=react-server --import tsx scripts/rehearse-firebase-staging.ts",
     "verify:firebase:staging-rules": "node --conditions=react-server --import tsx scripts/verify-firebase-staging-rules.ts",
+    "configure:firebase:staging-auth": "node --conditions=react-server --import tsx scripts/configure-firebase-staging-auth.ts",
     "migrate:firebase:auth": "node --conditions=react-server --import tsx scripts/firebase-migration/import-auth.ts",
     "migrate:firebase:data": "node --conditions=react-server --import tsx scripts/firebase-migration/import-data.ts",
     "migrate:firebase:founders": "node --conditions=react-server --import tsx scripts/prepare-founder-operational-profiles.ts",
