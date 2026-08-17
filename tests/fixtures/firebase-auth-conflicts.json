@@ -1,0 +1,26 @@
+{
+  "users": [
+    {
+      "id": "16161616-1616-4616-8616-161616161616",
+      "email": "duplicate-user@example.test",
+      "encrypted_password": null,
+      "email_confirmed_at": null,
+      "raw_user_meta_data": { "full_name": "Duplicate One" }
+    },
+    {
+      "id": "17171717-1717-4717-8717-171717171717",
+      "email": "duplicate-user@example.test",
+      "encrypted_password": null,
+      "email_confirmed_at": null,
+      "raw_user_meta_data": { "full_name": "Duplicate Two" }
+    },
+    {
+      "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "email": "invalid-uid@example.test",
+      "encrypted_password": null,
+      "email_confirmed_at": null,
+      "raw_user_meta_data": { "full_name": "Invalid UID" }
+    }
+  ],
+  "identities": []
+}

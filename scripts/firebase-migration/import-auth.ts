@@ -1,11 +1,11 @@
 import { z } from "zod";
 import type { UserImportRecord } from "firebase-admin/auth";
-import { getFirebaseAdminAuth } from "../../src/lib/firebase/admin";
+import { getMigrationAuth } from "./admin";
 import { migrationChecksum, migrationMode, readJsonFile, report } from "./shared";
 
 const exportSchema = z.object({
   users: z.array(z.object({
-    id: z.string().min(1).max(128), email: z.string().email().nullable(), encrypted_password: z.string().nullable().optional(),
+    id: z.string(), email: z.string().email().nullable(), encrypted_password: z.string().nullable().optional(),
     email_confirmed_at: z.string().nullable().optional(), raw_user_meta_data: z.record(z.string(), z.unknown()).nullable().optional(),
   })),
   identities: z.array(z.object({ user_id: z.string(), provider: z.string(), provider_id: z.string().nullable().optional(), identity_data: z.record(z.string(), z.unknown()).nullable().optional() })).default([]),
@@ -14,7 +14,7 @@ const exportSchema = z.object({
 const mode = migrationMode();
 const raw = await readJsonFile(mode.path);
 const parsed = exportSchema.parse(raw);
-const auth = getFirebaseAdminAuth();
+const auth = getMigrationAuth();
 const emailOwners = new Map<string, string>();
 const providerOwners = new Map<string, string>();
 const identitiesByUser = new Map<string, typeof parsed.identities>();
@@ -25,6 +25,7 @@ const records: UserImportRecord[] = [];
 
 for (const identity of parsed.identities) identitiesByUser.set(identity.user_id, [...(identitiesByUser.get(identity.user_id) ?? []), identity]);
 for (const user of parsed.users) {
+  if (!user.id || Buffer.byteLength(user.id, "utf8") > 128) { conflicts.push(`invalid_uid:${user.id || "<empty>"}`); continue; }
   if (!user.email) { activationFallback.push(user.id); warnings.push(`missing_email:${user.id}`); continue; }
   const email = user.email.toLowerCase();
   const priorEmailOwner = emailOwners.get(email);
@@ -69,8 +70,8 @@ for (let index = 0; index < records.length; index += 25) {
   }
 }
 
-if (conflicts.length) throw new Error(`Auth import conflicts must be resolved before apply: ${conflicts.length}.`);
 const importable = records.filter((record) => !existingUids.has(record.uid));
+if (mode.apply && conflicts.length) throw new Error(`Auth import conflicts must be resolved before apply: ${conflicts.length}. Run a dry-run for the conflict manifest.`);
 if (mode.apply) {
   for (let index = 0; index < importable.length; index += 1000) {
     const result = await auth.importUsers(importable.slice(index, index + 1000), { hash: { algorithm: "BCRYPT" } });

@@ -1,22 +1,27 @@
 {
   "users": [
-    { "id": "11111111-1111-4111-8111-111111111111", "email": "migration-user@example.test", "full_name": "Migration User", "created_at": "2026-08-01T12:00:00.000Z" }
+    { "id": "11111111-1111-4111-8111-111111111111", "email": "migration-user@example.test", "full_name": "Migration User", "created_at": "2026-08-01T12:00:00.000Z" },
+    { "id": "18181818-1818-4818-8818-181818181818", "email": "founder-owner@example.test", "full_name": "Founder Owner", "created_at": "2026-08-01T12:00:00.000Z" }
   ],
   "organizations": [
     { "id": "22222222-2222-4222-8222-222222222222", "name": "Migration PM", "type": "property_management", "status": "active", "created_at": "2026-08-01T12:00:00.000Z" },
-    { "id": "33333333-3333-4333-8333-333333333333", "name": "Migration Vendor", "type": "vendor", "status": "active", "created_at": "2026-08-01T12:00:00.000Z" }
+    { "id": "33333333-3333-4333-8333-333333333333", "name": "Migration Vendor", "type": "vendor", "status": "active", "created_at": "2026-08-01T12:00:00.000Z" },
+    { "id": "legacy-founder-org", "name": "Source Must Not Replace Founder", "type": "vendor", "status": "active", "created_at": "2026-08-01T12:00:00.000Z" }
   ],
   "organization_members": [
-    { "id": "access-one", "organization_id": "22222222-2222-4222-8222-222222222222", "user_id": "11111111-1111-4111-8111-111111111111", "organization_type": "property_management", "role": "property_manager", "status": "active" }
+    { "id": "access-one", "organization_id": "22222222-2222-4222-8222-222222222222", "user_id": "11111111-1111-4111-8111-111111111111", "organization_type": "property_management", "role": "property_manager", "status": "active" },
+    { "id": "access-founder", "organization_id": "legacy-founder-org", "user_id": "18181818-1818-4818-8818-181818181818", "organization_type": "vendor", "role": "owner", "status": "active" }
   ],
   "vendor_profiles": [
-    { "id": "profile-one", "organization_id": "33333333-3333-4333-8333-333333333333", "business_name": "Migration Vendor", "description": "Imported profile remains unpublished for review.", "public_email": "vendor@example.test", "public_display_consent": true }
+    { "id": "profile-one", "organization_id": "33333333-3333-4333-8333-333333333333", "business_name": "Migration Vendor", "description": "Imported profile remains unpublished for review.", "public_email": "vendor@example.test", "public_display_consent": true },
+    { "id": "profile-founder", "organization_id": "legacy-founder-org", "business_name": "Source Must Not Replace Founder", "description": "A source collision deliberately exercises Founder preservation.", "public_email": "founder-source@example.test", "public_display_consent": true }
   ],
   "properties": [
     { "id": "44444444-4444-4444-8444-444444444444", "organization_id": "22222222-2222-4222-8222-222222222222", "name": "Migration Property", "address_line_1": "1 Test Ave", "city": "Madison", "state_code": "WI", "postal_code": "53703", "status": "active" }
   ],
   "vendor_memberships": [
-    { "id": "55555555-5555-4555-8555-555555555555", "vendor_organization_id": "33333333-3333-4333-8333-333333333333", "tier": "network", "status": "active", "priority": 10, "currency": "USD" }
+    { "id": "55555555-5555-4555-8555-555555555555", "vendor_organization_id": "33333333-3333-4333-8333-333333333333", "tier": "network", "status": "active", "priority": 10, "currency": "USD" },
+    { "id": "legacy-founder-membership", "vendor_organization_id": "legacy-founder-org", "tier": "founding_partner", "status": "active", "priority": 30, "category_slug": "flooring", "currency": "USD", "source": "stripe", "stripe_customer_id": "cus_test_source_collision", "external_subscription_id": "sub_test_source_collision", "stripe_price_id": "price_test_source_collision" }
   ],
   "property_manager_service_requests": [
     { "id": "66666666-6666-4666-8666-666666666666", "organization_id": "22222222-2222-4222-8222-222222222222", "property_id": "44444444-4444-4444-8444-444444444444", "property_name": "Migration Property", "category_slug": "plumbing-sewer", "category_name": "Plumbing / Sewer", "service_area_key": "madison-wi", "problem_description": "Imported request for migration rehearsal.", "priority": "flexible", "preferred_contact": "email", "contact_email": "migration-user@example.test", "status": "submitted" }
@@ -27,6 +32,10 @@
   "service_requests": [
     { "id": "legacy-model-must-not-import" }
   ],
-  "founderMappings": {},
-  "founderMembershipMappings": {}
+  "founderMappings": {
+    "legacy-founder-org": "founder-authoritative-org"
+  },
+  "founderMembershipMappings": {
+    "legacy-founder-membership": "founder-authoritative-membership"
+  }
 }

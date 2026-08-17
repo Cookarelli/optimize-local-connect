@@ -9,6 +9,7 @@ These scripts prepare the later one-time cutover. They are not runtime bridges a
 - Rehearse with the Firebase emulators or a staging Firebase project before any production import.
 - Existing mapped Founder organization, membership, and profile documents win conflicts and are reported without being overwritten.
 - Password hashes, access tokens, OAuth secrets, and full imported records are never printed.
+- For a non-production rehearsal, `--firebase-cli-account=<email>` can reuse an already-authenticated Firebase CLI account. The helper creates a mode-0600 temporary Application Default Credentials file, removes it when the process exits, and refuses the production `optimize-local` project.
 
 ## Authentication export
 
@@ -47,3 +48,23 @@ npm run migrate:firebase:catalog -- --apply
 ```
 
 This prepares the 25 canonical service category documents without changing Founder category occupancy.
+
+## Isolated staging rehearsal
+
+The staging utilities require a project ID containing `staging`, refuse `optimize-local`, and require an exact `--confirm-project` value before writes:
+
+```sh
+FIREBASE_PROJECT_ID=optimize-local-staging \
+FIREBASE_STAGING_TEST_PASSWORD='<synthetic-test-password>' \
+npm run seed:firebase:staging -- --apply --confirm-project=optimize-local-staging --firebase-cli-account=<firebase-account>
+
+FIREBASE_PROJECT_ID=optimize-local-staging \
+npm run rehearse:firebase:staging -- --apply --confirm-project=optimize-local-staging --firebase-cli-account=<firebase-account>
+
+FIREBASE_PROJECT_ID=optimize-local-staging \
+NEXT_PUBLIC_FIREBASE_API_KEY='<public-browser-api-key>' \
+FIREBASE_STAGING_TEST_PASSWORD='<synthetic-test-password>' \
+npm run verify:firebase:staging-rules -- --confirm-project=optimize-local-staging --firebase-cli-account=<firebase-account>
+```
+
+The seed uses deterministic fictional identities and documents. The workflow rehearsal covers decline, reassignment, acceptance, completion, notification deduplication, and worker claiming. The Rules verifier uses Firebase ID tokens against the deployed REST API and expects cross-tenant and privilege-escalation attempts to return HTTP 403.

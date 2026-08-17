@@ -1,8 +1,8 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
-import { getPlatformFirestore } from "../../src/lib/firebase/admin";
 import { organizationMembershipId, normalizeServiceArea, slugify, stableDigest } from "../../src/lib/firebase/platform";
 import { emptyVendorProfile } from "../../src/lib/firebase/vendor-profiles";
+import { getMigrationFirestore } from "./admin";
 import { migrationChecksum, migrationMode, readJsonFile, report } from "./shared";
 
 const row = z.record(z.string(), z.unknown());
@@ -17,7 +17,7 @@ type PlannedWrite = { path: string; data: Record<string, unknown> };
 const mode = migrationMode();
 const raw = await readJsonFile(mode.path);
 const data = schema.parse(raw);
-const db = getPlatformFirestore();
+const db = getMigrationFirestore();
 const migrationNow = Timestamp.now();
 const conflicts: string[] = [];
 const warnings: string[] = [];
