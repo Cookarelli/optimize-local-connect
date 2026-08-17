@@ -14,6 +14,7 @@
     "test:unit": "node --import tsx --test tests/**/*.test.ts",
     "test:firestore": "FIREBASE_CLI_DISABLE_UPDATE_CHECK=1 XDG_CONFIG_HOME=/private/tmp/olc-firebase-config firebase emulators:exec --only firestore --project demo-optimize-local-connect \"node --conditions=react-server --import tsx --test tests/founder-firestore.emulator.ts\"",
     "seed:founders": "node --conditions=react-server --import tsx scripts/seed-founder-categories.ts",
+    "release:manual-founder": "node --conditions=react-server --import tsx scripts/release-manually-granted-founder.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .vercel --ignore-pattern .vinext --ignore-pattern .wrangler",
     "dev:next": "next dev"
   },

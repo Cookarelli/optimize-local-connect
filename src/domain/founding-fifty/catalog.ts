@@ -20,7 +20,6 @@ export const FOUNDING_BENEFIT_CATALOG = [
 ] as const;
 
 export const INITIAL_RESERVED_SEATS: Readonly<Record<number, string>> = {
-  1: "CLA Exteriors",
   3: "Afrodita Appliances",
   5: "Clean to a T",
 };

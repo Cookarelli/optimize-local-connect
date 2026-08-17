@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { FOUNDER_CATEGORY_CATALOG, initialFounderCategoryState } from "../src/domain/founder-categories/catalog";
+import { INITIAL_RESERVED_SEATS } from "../src/domain/founding-fifty/catalog";
 
 const checkoutAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
 const checkoutForm = readFileSync(new URL("../src/components/founding-partner/guest-checkout-form.tsx", import.meta.url), "utf8");
@@ -35,11 +36,13 @@ test("current Founder onboarding validation and dropdowns use the canonical cata
   assert.doesNotMatch(onboardingForm, /FOUNDING_VERTICAL_CATALOG/);
 });
 
-test("initial business state locks Flooring, Roofing, and Appliance Repair without fabricated records", () => {
+test("initial business state keeps Flooring claimed, Roofing available, and Appliance Repair reserved", () => {
   assert.deepEqual(initialFounderCategoryState("flooring"), { status: "claimed", publicBusinessName: "Flooring Trends", paymentSource: "reserved_without_membership" });
-  assert.deepEqual(initialFounderCategoryState("roofing"), { status: "claimed", publicBusinessName: "CLA Exteriors", paymentSource: "reserved_without_membership" });
+  assert.deepEqual(initialFounderCategoryState("roofing"), { status: "available", publicBusinessName: null, paymentSource: null });
   assert.deepEqual(initialFounderCategoryState("appliance-repair"), { status: "reserved", publicBusinessName: null, paymentSource: "reserved_without_membership" });
   assert.deepEqual(initialFounderCategoryState("catering-party-catering"), { status: "available", publicBusinessName: null, paymentSource: null });
+  assert.equal(FOUNDER_CATEGORY_CATALOG.filter((category) => initialFounderCategoryState(category.slug).status === "available").length, 23);
+  assert.equal(Object.values(INITIAL_RESERVED_SEATS).includes("CLA Exteriors"), false);
 });
 
 test("Founder exclusivity uses Firebase Admin transactions and independent occupancy documents", () => {

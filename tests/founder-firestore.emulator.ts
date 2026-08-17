@@ -39,11 +39,12 @@ test("seed creates exactly 25 canonical categories and required initial state", 
     "concrete-masonry", "fencing", "junk-removal-hauling", "moving",
     "catering-party-catering", "handyman-property-maintenance",
   ]);
-  assert.deepEqual(snapshot.docs.filter((item) => item.data().status === "available").map((item) => item.id), snapshot.docs.map((item) => item.id).filter((slug) => !["flooring", "roofing", "appliance-repair"].includes(slug)));
+  assert.deepEqual(snapshot.docs.filter((item) => item.data().status === "available").map((item) => item.id), snapshot.docs.map((item) => item.id).filter((slug) => !["flooring", "appliance-repair"].includes(slug)));
+  assert.equal(snapshot.docs.filter((item) => item.data().status === "available").length, 23);
   assert.equal(snapshot.docs.find((item) => item.id === "flooring")?.data().publicBusinessName, "Flooring Trends");
   assert.equal(snapshot.docs.find((item) => item.id === "flooring")?.data().status, "claimed");
-  assert.equal(snapshot.docs.find((item) => item.id === "roofing")?.data().publicBusinessName, "CLA Exteriors");
-  assert.equal(snapshot.docs.find((item) => item.id === "roofing")?.data().status, "claimed");
+  assert.equal(snapshot.docs.find((item) => item.id === "roofing")?.data().publicBusinessName, null);
+  assert.equal(snapshot.docs.find((item) => item.id === "roofing")?.data().status, "available");
   assert.equal(snapshot.docs.find((item) => item.id === "appliance-repair")?.data().status, "reserved");
   assert.equal(snapshot.docs.find((item) => item.id === "catering-party-catering")?.data().status, "available");
 });
@@ -111,6 +112,50 @@ test("CLA manual grant is idempotent and fabricates no payment metadata", async 
   assert.equal(membership?.stripe, null);
   assert.equal(membership?.paypal, null);
   assert.equal((await db.collection("founderPayments").get()).size, 0);
+});
+
+test("releasing CLA preserves history, leaves other categories unchanged, and lets a new buyer reserve Roofing", async () => {
+  const flooringBefore = (await db.doc("founderCategories/flooring").get()).data();
+  const applianceBefore = (await db.doc("founderCategories/appliance-repair").get()).data();
+  const grant = await service.manuallyGrantFounder({ categorySlug: "roofing", businessName: "CLA Exteriors" }, db);
+  await db.doc(`organizations/${grant.organizationId}`).set({ activeMembershipId: grant.membershipId, unrelatedVendorField: "preserve-me" }, { merge: true });
+
+  const releaseInput = {
+    categorySlug: "roofing",
+    organizationId: grant.organizationId,
+    membershipId: grant.membershipId,
+    eventId: "cla_roofing_release_2026_08_17",
+    releasedBy: "owner_business_decision",
+    reason: "The manually granted Roofing Founder position was released.",
+  };
+  assert.equal((await service.releaseManuallyGrantedFounder(releaseInput, db)).released, true);
+  assert.equal((await service.releaseManuallyGrantedFounder(releaseInput, db)).released, false);
+
+  const [category, publicCategory, membership, occupancy, organization, events, payments] = await Promise.all([
+    db.doc("founderCategories/roofing").get(), db.doc("publicFounderCategories/roofing").get(),
+    db.doc(`memberships/${grant.membershipId}`).get(), db.doc(`founderOccupancies/${grant.organizationId}`).get(),
+    db.doc(`organizations/${grant.organizationId}`).get(), db.collection("founderGovernanceEvents").get(), db.collection("founderPayments").get(),
+  ]);
+  assert.deepEqual({ status: category.data()?.status, publicBusinessName: category.data()?.publicBusinessName, claimedOrganizationId: category.data()?.claimedOrganizationId, membershipId: category.data()?.membershipId, paymentSource: category.data()?.paymentSource }, { status: "available", publicBusinessName: null, claimedOrganizationId: null, membershipId: null, paymentSource: null });
+  assert.deepEqual({ status: publicCategory.data()?.status, publicBusinessName: publicCategory.data()?.publicBusinessName }, { status: "available", publicBusinessName: null });
+  assert.equal(membership.data()?.status, "expired");
+  assert.equal(membership.data()?.paymentSource, "manually_granted");
+  assert.equal(membership.data()?.stripe, null);
+  assert.equal(membership.data()?.paypal, null);
+  assert.equal(membership.data()?.actualAmountPaidCents, null);
+  assert.equal(occupancy.data()?.status, "released");
+  assert.equal(organization.data()?.activeMembershipId, null);
+  assert.equal(organization.data()?.unrelatedVendorField, "preserve-me");
+  assert.equal(events.size, 1);
+  assert.equal(payments.size, 0);
+  assert.equal((await db.collection("founderCategories").where("status", "==", "available").get()).size, 23);
+  assert.deepEqual({ status: (await db.doc("founderCategories/flooring").get()).data()?.status, publicBusinessName: (await db.doc("founderCategories/flooring").get()).data()?.publicBusinessName }, { status: flooringBefore?.status, publicBusinessName: flooringBefore?.publicBusinessName });
+  assert.deepEqual({ status: (await db.doc("founderCategories/appliance-repair").get()).data()?.status, paymentSource: (await db.doc("founderCategories/appliance-repair").get()).data()?.paymentSource }, { status: applianceBefore?.status, paymentSource: applianceBefore?.paymentSource });
+
+  const newReservation = await service.reserveFounderCategory({ ...identity("New Roofing Buyer", "new-roofing@example.com"), categorySlug: "roofing" }, db);
+  assert.notEqual(newReservation.organizationId, grant.organizationId);
+  assert.equal((await db.doc("founderCategories/roofing").get()).data()?.status, "reserved");
+  assert.equal((await db.doc(`founderOccupancies/${grant.organizationId}`).get()).data()?.status, "released");
 });
 
 test("PayPal reconciliation records a discounted actual amount and rejects duplicate or occupied claims", async () => {

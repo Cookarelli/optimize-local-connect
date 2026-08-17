@@ -244,6 +244,74 @@ export async function manuallyGrantFounder(input: { categorySlug: string; busine
   });
 }
 
+export async function releaseManuallyGrantedFounder(input: {
+  categorySlug: string;
+  organizationId: string;
+  membershipId: string;
+  eventId: string;
+  releasedBy: string;
+  reason: string;
+}, db: Firestore = getFounderFirestore()) {
+  if (!isFounderCategorySlug(input.categorySlug)) throw new Error("Unknown Founder category.");
+  const eventId = normalized(input.eventId);
+  const releasedBy = normalized(input.releasedBy);
+  const reason = normalized(input.reason);
+  if (!/^[a-z0-9][a-z0-9_-]{7,127}$/i.test(eventId)) throw new Error("A stable Founder release event ID is required.");
+  if (releasedBy.length < 2 || reason.length < 10) throw new Error("Founder release attribution and reason are required.");
+
+  const categoryRef = db.doc(`founderCategories/${input.categorySlug}`);
+  const publicRef = db.doc(`publicFounderCategories/${input.categorySlug}`);
+  const organizationRef = db.doc(`organizations/${input.organizationId}`);
+  const membershipRef = db.doc(`memberships/${input.membershipId}`);
+  const occupancyRef = db.doc(`founderOccupancies/${input.organizationId}`);
+  const eventRef = db.doc(`founderGovernanceEvents/${referenceId("manual_release", eventId)}`);
+  const paymentQuery = db.collection("founderPayments").where("membershipId", "==", input.membershipId).limit(1);
+
+  return db.runTransaction(async (transaction) => {
+    const [categorySnapshot, membershipSnapshot, occupancySnapshot, organizationSnapshot, eventSnapshot, paymentSnapshot] = await Promise.all([
+      transaction.get(categoryRef), transaction.get(membershipRef), transaction.get(occupancyRef),
+      transaction.get(organizationRef), transaction.get(eventRef), transaction.get(paymentQuery),
+    ]);
+    if (eventSnapshot.exists) {
+      const event = eventSnapshot.data();
+      if (event?.categorySlug !== input.categorySlug || event?.organizationId !== input.organizationId || event?.membershipId !== input.membershipId) {
+        throw new Error("Founder release event ID is already associated with different records.");
+      }
+      return { released: false, organizationId: input.organizationId, membershipId: input.membershipId, eventId: eventRef.id };
+    }
+
+    const category = categorySnapshot.data() as FounderCategoryDocument | undefined;
+    const membership = membershipSnapshot.data();
+    const occupancy = occupancySnapshot.data();
+    if (!category || category.status !== "claimed" || category.paymentSource !== "manually_granted") throw new Error("Only a manually granted Founder claim can be released.");
+    if (category.claimedOrganizationId !== input.organizationId || category.membershipId !== input.membershipId) throw new Error("Founder category release record mismatch.");
+    if (!membershipSnapshot.exists || membership?.organizationId !== input.organizationId || membership?.categorySlug !== input.categorySlug || membership?.status !== "manually_granted" || membership?.paymentSource !== "manually_granted") throw new Error("Manual Founder membership release record mismatch.");
+    if (membership?.stripe !== null || membership?.paypal !== null || membership?.actualAmountPaidCents !== null || !paymentSnapshot.empty) throw new Error("Founder release aborted because payment evidence exists.");
+    if (!occupancySnapshot.exists || occupancy?.organizationId !== input.organizationId || occupancy?.membershipId !== input.membershipId || occupancy?.categorySlug !== input.categorySlug || occupancy?.status !== "claimed") throw new Error("Active Founder occupancy release record mismatch.");
+
+    const now = Timestamp.now();
+    const nextCategory = availableCategory(category, now);
+    transaction.set(categoryRef, nextCategory);
+    transaction.set(publicRef, publicCategory(nextCategory));
+    transaction.update(membershipRef, { status: "expired", priority: 0, releasedAt: now, releasedBy, releaseReason: reason, updatedAt: now });
+    transaction.update(occupancyRef, { status: "released", expiresAt: null, releasedAt: now, releasedBy, releaseReason: reason, updatedAt: now });
+    if (organizationSnapshot.exists) {
+      const organization = organizationSnapshot.data();
+      const organizationUpdate: Record<string, unknown> = {};
+      if (organization?.activeMembershipId === input.membershipId) organizationUpdate.activeMembershipId = null;
+      if (organization?.pendingMembershipId === input.membershipId) organizationUpdate.pendingMembershipId = null;
+      if (Object.keys(organizationUpdate).length) transaction.update(organizationRef, { ...organizationUpdate, updatedAt: now });
+    }
+    transaction.create(eventRef, {
+      action: "manual_founder_released", sourceEventId: eventId, categorySlug: input.categorySlug,
+      organizationId: input.organizationId, membershipId: input.membershipId,
+      priorStatus: category.status, priorPaymentSource: category.paymentSource,
+      priorPublicBusinessName: category.publicBusinessName, releasedBy, reason, occurredAt: now,
+    });
+    return { released: true, organizationId: input.organizationId, membershipId: input.membershipId, eventId: eventRef.id };
+  });
+}
+
 export async function reconcilePaypalFounder(input: { categorySlug: string; businessName: string; organizationId?: string | null; contactEmail?: string | null; paypalReferenceId: string; actualAmountPaidCents: number; currency: string; paidAt: Date }, db: Firestore = getFounderFirestore()) {
   if (!isFounderCategorySlug(input.categorySlug)) throw new Error("Unknown Founder category."); validateMoney(input.actualAmountPaidCents, input.currency);
   const paypalReference = input.paypalReferenceId.trim(); if (paypalReference.length < 3) throw new Error("PayPal transaction reference is required.");
