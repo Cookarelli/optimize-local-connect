@@ -45,11 +45,13 @@ test("public messaging reflects the launch network and relationship-driven posit
   assert.match(homePage, /Help build the network from the beginning/);
   assert.match(companyPage, /inspired by a request from property-management leader Mary O’Sullivan/);
   assert.match(companyPage, /Starting where local coordination matters every day/);
+  assert.match(demoPage, /Local property manager network/);
   assert.match(membershipsPage, /FoundingMemberAvailability/);
   assert.match(membershipsPage, /Connect Member Benefit/);
   assert.match(membershipsPage, /reserved atomically before Stripe Checkout opens/);
   assert.doesNotMatch(publicSource, /9,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
   assert.doesNotMatch(publicSource, /18,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
+  assert.doesNotMatch(publicSource, /Rockford Area Renters Association|Northern Illinois Landlords? Association|\bNILA\b|\bNYLA\b/i);
   assert.doesNotMatch(publicSource, /guaranteed (?:NILA|Northern Illinois Landlord Association) adoption/i);
   assert.doesNotMatch(publicSource, /all (?:NILA|Northern Illinois Landlord Association) members (?:use|are on)/i);
   assert.match(homePage, /FOUNDING_MEMBER_OFFER\.cta/);
