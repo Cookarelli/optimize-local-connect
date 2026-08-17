@@ -3,12 +3,14 @@ import type Stripe from "stripe";
 import { z } from "zod";
 import { FOUNDING_PARTNER_PLAN, getVendorPlan, getVendorPlanPriceId, getVendorPlanProductId, VENDOR_MEMBERSHIP_PLANS } from "@/src/domain/vendor-memberships/catalog";
 import { membershipStatusFromStripe } from "@/src/domain/vendor-memberships/status";
+import { isFounderCategorySlug } from "@/src/domain/founder-categories/catalog";
+import { claimFounderFromVerifiedStripe, releaseFounderReservation } from "@/src/lib/founder-categories/firestore";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { getStripeClient } from "@/src/lib/stripe/client";
 import { evaluateOrganizationActivation } from "@/src/lib/vendor-memberships/lifecycle";
 
 const uuid=z.string().uuid();
-export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId?:string;guestClaimId?:string;customerId:string;onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
+export async function createVendorMembershipCheckout(input:{planKey:string;organizationId:string;membershipId:string;userId?:string;guestClaimId?:string;customerId:string;founderCategoryId?:string;founderCategorySlug?:string;founderReservationId?:string;onboardingVersion:number;checkoutAttemptNumber:number;successUrl:string;cancelUrl:string}){
   const plan=getVendorPlan(input.planKey); if(!plan) throw new Error("Unknown vendor membership plan.");
   const priceId=getVendorPlanPriceId(plan); const productId=getVendorPlanProductId(plan); const stripeClient=getStripeClient();
   const price=await stripeClient.prices.retrieve(priceId);
@@ -46,6 +48,9 @@ export async function createVendorMembershipCheckout(input:{planKey:string;organ
     ...(input.guestClaimId ? { guest_claim_id:input.guestClaimId } : {}),
     membership_record_id:input.membershipId,
     membership_tier:plan.key,
+    ...(input.founderCategoryId ? { founder_category_id:input.founderCategoryId } : {}),
+    ...(input.founderCategorySlug ? { founder_category_slug:input.founderCategorySlug } : {}),
+    ...(input.founderReservationId ? { founder_reservation_id:input.founderReservationId } : {}),
     onboarding_version:String(input.onboardingVersion),
     // Legacy aliases keep already-configured webhook deployments compatible.
     vendor_membership_id:input.membershipId,
@@ -69,36 +74,68 @@ function subscriptionPeriodEnd(subscription:Stripe.Subscription){return subscrip
 export const MEMBERSHIP_STRIPE_EVENTS=new Set(["checkout.session.completed","checkout.session.expired","customer.subscription.created","customer.subscription.updated","customer.subscription.deleted","invoice.paid","invoice.payment_failed"]);
 export function isVendorMembershipCheckout(event:Stripe.Event){return Boolean(event.type.startsWith("checkout.session.")&&"metadata" in event.data.object&&(event.data.object.metadata?.membership_record_id||event.data.object.metadata?.vendor_membership_id));}
 
+function founderMetadata(metadata: Stripe.Metadata | null | undefined) {
+  const membershipId = metadata?.membership_record_id ?? metadata?.vendor_membership_id;
+  const organizationId = metadata?.organization_id ?? metadata?.vendor_organization_id;
+  const categorySlug = metadata?.founder_category_slug;
+  const reservationId = metadata?.founder_reservation_id;
+  const isFounder = (metadata?.membership_tier ?? metadata?.vendor_plan_key) === "founding_partner";
+  if (!isFounder || !membershipId || !organizationId || !categorySlug || !reservationId || !isFounderCategorySlug(categorySlug)) return null;
+  return { membershipId, organizationId, categorySlug, reservationId };
+}
+
 export async function processVendorMembershipStripeEvent(event:Stripe.Event,payload:unknown){
   if(!MEMBERSHIP_STRIPE_EVENTS.has(event.type)) return false;
-  const admin=createSupabaseAdminClient();
-  const {data:prior,error:priorError}=await admin.from("vendor_membership_provider_events").select("processed_at").eq("provider","stripe").eq("provider_event_id",event.id).maybeSingle();
-  if(priorError) throw priorError;
-  if(prior?.processed_at) return true;
   if(event.type==="checkout.session.expired"){
-    const session=event.data.object as Stripe.Checkout.Session;const membershipId=uuid.safeParse(session.metadata?.membership_record_id??session.metadata?.vendor_membership_id);if(!membershipId.success)return false;
+    const session=event.data.object as Stripe.Checkout.Session;
+    const founder=founderMetadata(session.metadata);
+    if(founder){
+      await releaseFounderReservation({categorySlug:founder.categorySlug,membershipId:founder.membershipId,reservationId:founder.reservationId,eventId:event.id});
+      return true;
+    }
+    const admin=createSupabaseAdminClient();
+    const {data:prior,error:priorError}=await admin.from("vendor_membership_provider_events").select("processed_at").eq("provider","stripe").eq("provider_event_id",event.id).maybeSingle();
+    if(priorError) throw priorError;
+    if(prior?.processed_at) return true;
+    const membershipId=uuid.safeParse(session.metadata?.membership_record_id??session.metadata?.vendor_membership_id);if(!membershipId.success)return false;
     const {error:expireError}=await admin.rpc("fail_vendor_membership_checkout",{target_membership_id:membershipId.data});
     if(expireError) throw expireError;
     const {error:ledgerError}=await admin.from("vendor_membership_provider_events").upsert({provider_event_id:event.id,event_type:event.type,provider_object_id:session.id,membership_id:membershipId.data,payload,processed_at:new Date().toISOString(),processing_error:null},{onConflict:"provider,provider_event_id"});
     if(ledgerError) throw ledgerError;
     return true;
   }
-  const stripeClient=getStripeClient(); let subscriptionId:string|null=null;
+  const stripeClient=getStripeClient(); let subscriptionId:string|null=null; let checkoutSessionId:string|null=null;
   if(event.type==="checkout.session.completed"){
     const session=event.data.object as Stripe.Checkout.Session;
     if(!session.metadata?.membership_record_id&&!session.metadata?.vendor_membership_id) return false;
-    if(session.mode==="payment") return processOneTimeVendorMembershipCheckout(stripeClient,admin,event,payload,session);
+    if(session.mode==="payment") return processOneTimeVendorMembershipCheckout(stripeClient,createSupabaseAdminClient(),event,payload,session);
+    checkoutSessionId=session.id;
     subscriptionId=typeof session.subscription==="string"?session.subscription:session.subscription?.id??null;
   }else if(event.type.startsWith("customer.subscription.")) subscriptionId=(event.data.object as Stripe.Subscription).id;
   else subscriptionId=subscriptionIdFromInvoice(event.data.object as Stripe.Invoice);
   if(!subscriptionId?.startsWith("sub_")) return false;
   const subscription=await stripeClient.subscriptions.retrieve(subscriptionId,{expand:["items.data.price"]});
-  const metadata=subscription.metadata; const membershipId=uuid.safeParse(metadata.membership_record_id??metadata.vendor_membership_id); const organizationId=uuid.safeParse(metadata.organization_id??metadata.vendor_organization_id);
-  if(!membershipId.success||!organizationId.success) return false;
+  const metadata=subscription.metadata;
   const item=subscription.items.data[0]; const priceId=typeof item?.price==="string"?item.price:item?.price.id; const amount=typeof item?.price==="string"?null:item?.price.unit_amount; const interval=typeof item?.price==="string"?null:item?.price.recurring?.interval;
   const plan=VENDOR_MEMBERSHIP_PLANS.find(candidate=>getVendorPlanPriceId(candidate)===priceId);if(!plan)return false;
   const expectedPrice=getVendorPlanPriceId(plan); const customerId=typeof subscription.customer==="string"?subscription.customer:subscription.customer.id;
   if(subscription.items.data.length!==1||item?.quantity!==1||priceId!==expectedPrice||amount!==plan.amountCents||interval!==plan.interval||subscription.currency.toUpperCase()!==plan.currency) throw new Error("Stripe subscription does not match the configured vendor plan.");
+  const founder=founderMetadata(metadata);
+  if(founder){
+    if(plan.key!=="founding_partner"||!priceId||amount===null) throw new Error("Stripe subscription does not match the Founder plan.");
+    const founderStatus=membershipStatusFromStripe(event.type,subscription.status);
+    if(!["active","trialing","past_due"].includes(founderStatus)) return true;
+    const periodEnd=subscriptionPeriodEnd(subscription);
+    if(!periodEnd) throw new Error("Stripe Founder subscription has no current period end.");
+    await claimFounderFromVerifiedStripe({eventId:event.id,eventType:event.type,categorySlug:founder.categorySlug,organizationId:founder.organizationId,membershipId:founder.membershipId,reservationId:founder.reservationId,checkoutSessionId,subscriptionId:subscription.id,customerId,priceId,status:founderStatus as "active"|"trialing"|"past_due",periodEnd:new Date(periodEnd*1000),paidAt:new Date(subscription.start_date*1000),actualAmountPaidCents:amount,currency:subscription.currency.toUpperCase()});
+    return true;
+  }
+  const admin=createSupabaseAdminClient();
+  const {data:prior,error:priorError}=await admin.from("vendor_membership_provider_events").select("processed_at").eq("provider","stripe").eq("provider_event_id",event.id).maybeSingle();
+  if(priorError) throw priorError;
+  if(prior?.processed_at) return true;
+  const membershipId=uuid.safeParse(metadata.membership_record_id??metadata.vendor_membership_id); const organizationId=uuid.safeParse(metadata.organization_id??metadata.vendor_organization_id);
+  if(!membershipId.success||!organizationId.success) return false;
   const {error}=await admin.rpc("process_vendor_membership_stripe_event",{target_event_id:event.id,target_event_type:event.type,target_membership_id:membershipId.data,target_vendor_organization_id:organizationId.data,target_level_code:plan.code,target_subscription_id:subscription.id,target_customer_id:customerId,target_price_id:priceId,target_status:membershipStatusFromStripe(event.type,subscription.status),target_period_end:subscriptionPeriodEnd(subscription)?new Date(subscriptionPeriodEnd(subscription)!*1000).toISOString():null,target_cancel_at_period_end:subscription.cancel_at_period_end,target_amount_cents:amount,target_currency:subscription.currency.toUpperCase(),target_payload:payload});
   if(error) throw error;
   const stripeCustomer=await stripeClient.customers.retrieve(customerId);

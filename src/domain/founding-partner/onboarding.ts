@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { FOUNDING_VERTICAL_CATALOG } from "@/src/domain/founding-fifty/catalog";
+import { FOUNDER_CATEGORY_DISPLAY_NAMES } from "@/src/domain/founder-categories/catalog";
 import { propertyManagerPerkSchema, type PropertyManagerPerkType } from "@/src/domain/vendor-memberships/property-manager-perk";
 
 const urlOrEmpty = z.union([z.literal(""), z.string().trim().url("Enter a complete URL, including https://.")]);
 const integerOrEmpty = (maximum: number) => z.union([z.literal(""), z.coerce.number().int().min(0).max(maximum)]);
-const categoryOrEmpty = z.union([z.literal(""), z.enum(FOUNDING_VERTICAL_CATALOG)]);
+const categoryOrEmpty = z.union([z.literal(""), z.enum(FOUNDER_CATEGORY_DISPLAY_NAMES)]);
 const customerTypeOrEmpty = z.enum(["", "residential", "commercial", "both"]);
 const insuranceOrEmpty = z.enum(["", "insured", "pending", "not_insured", "not_applicable"]);
 const contactMethodOrEmpty = z.enum(["", "email", "phone", "text"]);
@@ -17,7 +17,7 @@ export const foundingPartnerDraftSchema = z.object({
   businessDescription: z.string().trim().max(1200),
   yearsInBusiness: integerOrEmpty(250),
   primaryServiceCategory: categoryOrEmpty,
-  additionalServiceCategories: z.array(z.enum(FOUNDING_VERTICAL_CATALOG)).max(15),
+  additionalServiceCategories: z.array(z.enum(FOUNDER_CATEGORY_DISPLAY_NAMES)).max(15),
   servicesOffered: z.array(z.string().trim().min(1).max(120)).max(50),
   serviceAreaCities: z.array(z.string().trim().min(1).max(160)).max(50),
   serviceRadiusMiles: integerOrEmpty(500),

@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/src/lib/auth/session";
+import { manuallyGrantFounder, reconcileLegacyStripeFounder, reconcilePaypalFounder, setFounderCategoryReserved } from "@/src/lib/founder-categories/firestore";
 import { retrieveAndVerifyExternalFoundingPartnerCheckout } from "@/src/lib/founding-fifty/stripe";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 import { getStripeClient } from "@/src/lib/stripe/client";
+import { retrieveAndVerifyFounderSubscriptionCheckout } from "@/src/lib/stripe/founder-subscription-reconciliation";
 
 const actionSchema = z.object({
   onboardingId: z.string().uuid(),
@@ -59,6 +61,108 @@ export async function reconcileFounderCheckout(formData: FormData) {
   if (error) throw new Error("The verified Founder payment could not be reconciled.");
   revalidatePath("/admin/founders");
   redirect("/admin/founders?result=reconciled");
+}
+
+export async function reconcileCurrentFounderSubscription(formData: FormData) {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) throw new Error("Super Admin access required.");
+  const input = z.object({
+    checkoutSessionId: z.string().regex(/^cs_(test_|live_)?[A-Za-z0-9]+$/),
+    categorySlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    businessName: z.string().trim().min(2).max(160),
+    organizationId: z.string().regex(/^[A-Za-z0-9_-]{3,128}$/).optional(),
+  }).parse({
+    checkoutSessionId: formData.get("checkoutSessionId"),
+    categorySlug: formData.get("categorySlug"),
+    businessName: formData.get("businessName"),
+    organizationId: formData.get("organizationId")?.toString() || undefined,
+  });
+  const verified = await retrieveAndVerifyFounderSubscriptionCheckout(input.checkoutSessionId);
+  if (!verified) throw new Error("Stripe did not verify an exact paid current Founding Member annual subscription.");
+  await reconcileLegacyStripeFounder({
+    categorySlug: input.categorySlug,
+    businessName: input.businessName,
+    customerEmail: verified.customerEmail,
+    organizationId: input.organizationId ?? null,
+    checkoutSessionId: verified.checkoutSessionId,
+    subscriptionId: verified.subscriptionId,
+    customerId: verified.customerId,
+    priceId: verified.priceId,
+    status: verified.membershipStatus,
+    periodEnd: new Date(verified.periodEnd),
+    actualAmountPaidCents: verified.amountCents,
+    currency: verified.currency,
+    paidAt: new Date(verified.paidAt),
+  });
+  revalidateFounderPaths();
+  redirect("/admin/founder-categories?result=current_reconciled");
+}
+
+export async function manuallyGrantFounderCategory(formData: FormData) {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) throw new Error("Super Admin access required.");
+  const input = z.object({
+    categorySlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    businessName: z.string().trim().min(2).max(160),
+    organizationId: z.string().regex(/^[A-Za-z0-9_-]{3,128}$/).optional(),
+  }).parse({
+    categorySlug: formData.get("categorySlug"),
+    businessName: formData.get("businessName"),
+    organizationId: formData.get("organizationId")?.toString() || undefined,
+  });
+  await manuallyGrantFounder({ categorySlug: input.categorySlug, businessName: input.businessName, organizationId: input.organizationId ?? null });
+  revalidateFounderPaths();
+  redirect("/admin/founder-categories?result=manual_founder_granted");
+}
+
+export async function reconcilePaypalFounderSale(formData: FormData) {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) throw new Error("Super Admin access required.");
+  const input = z.object({
+    categorySlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    businessName: z.string().trim().min(2).max(160),
+    organizationId: z.string().regex(/^[A-Za-z0-9_-]{3,128}$/).optional(),
+    contactEmail: z.string().email().optional(),
+    paypalReferenceId: z.string().trim().min(3).max(200),
+    amountPaid: z.coerce.number().positive().max(100_000),
+    currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/),
+    paidAt: z.coerce.date(),
+  }).parse({
+    categorySlug: formData.get("categorySlug"), businessName: formData.get("businessName"),
+    organizationId: formData.get("organizationId")?.toString() || undefined,
+    contactEmail: formData.get("contactEmail")?.toString() || undefined,
+    paypalReferenceId: formData.get("paypalReferenceId"), amountPaid: formData.get("amountPaid"),
+    currency: formData.get("currency"), paidAt: formData.get("paidAt"),
+  });
+  const actualAmountPaidCents = Math.round(input.amountPaid * 100);
+  if (Math.abs(actualAmountPaidCents / 100 - input.amountPaid) > 0.00001) throw new Error("PayPal amount must use no more than two decimal places.");
+  await reconcilePaypalFounder({
+    categorySlug: input.categorySlug, businessName: input.businessName, organizationId: input.organizationId ?? null,
+    contactEmail: input.contactEmail ?? null, paypalReferenceId: input.paypalReferenceId,
+    actualAmountPaidCents, currency: input.currency, paidAt: input.paidAt,
+  });
+  revalidateFounderPaths();
+  redirect("/admin/founder-categories?result=paypal_reconciled");
+}
+
+export async function manageFounderCategoryReservation(formData: FormData) {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) throw new Error("Super Admin access required.");
+  const input = z.object({
+    categorySlug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    action: z.enum(["reserve", "unreserve"]),
+  }).parse({ categorySlug: formData.get("categorySlug"), action: formData.get("action") });
+  await setFounderCategoryReserved({ categorySlug: input.categorySlug, reserved: input.action === "reserve" });
+  revalidateFounderPaths();
+  redirect("/admin/founder-categories?result=reservation_updated");
+}
+
+function revalidateFounderPaths() {
+  revalidatePath("/admin/founder-categories");
+  revalidatePath("/admin/founders");
+  revalidatePath("/memberships");
+  revalidatePath("/pricing");
+  revalidatePath("/marketplace");
 }
 
 export async function resetPendingVendorEnrollment(formData: FormData) {

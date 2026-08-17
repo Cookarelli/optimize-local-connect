@@ -1,0 +1,20 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /publicFounderCategories/{slug} {
+      allow get, list: if resource.data.keys().hasOnly([
+        'displayName',
+        'slug',
+        'displayOrder',
+        'status',
+        'publicBusinessName'
+      ]);
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

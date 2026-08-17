@@ -32,8 +32,8 @@ test("public metadata positions Connect as an intelligent local business network
   assert.match(brand, /Discover trusted local businesses, member benefits, referrals, and smarter matching/);
 });
 
-test("public purchase CTAs use Payment Links while informational routes remain intact", () => {
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
+test("Founder purchase CTAs use governed checkout while other membership routes remain intact", () => {
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships#founder-checkout"/);
   assert.match(vendorMembershipPage, /founding\?<Link href="\/founders"/);
   assert.match(legacyFoundersPage, /redirect\("\/memberships"\)/);
   assert.match(legacyFoundersClaimPage, /redirect\("\/memberships"\)/);
@@ -46,10 +46,10 @@ test("the Founders route forwards visitors to the current membership offer", () 
 
 test("Founding Member enrollment is public and server-controlled", () => {
   assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
-  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
-  assert.match(foundersAction, /target_plan_code: plan\.code/);
+  assert.match(foundersAction, /reserveFounderCategory/);
+  assert.match(foundersAction, /attachFounderStripeCheckout/);
   assert.doesNotMatch(foundersAction, /requireUser\(|getCurrentUser\(/);
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships#founder-checkout"/);
 });
 
 test("guest checkout validation failures log Zod issue categories without customer values", () => {
@@ -61,7 +61,7 @@ test("guest checkout validation failures log Zod issue categories without custom
 
 test("guest checkout pending membership failures identify the database stage", () => {
   assert.match(foundersAction, /stage = "pending_membership_creation"/);
-  assert.match(foundersAction, /asCheckoutError\(stage, reservationError\)/);
+  assert.match(foundersAction, /reservation = await reserveFounderCategory/);
   assert.match(foundersAction, /failedStage: stage/);
 });
 
@@ -83,12 +83,12 @@ test("guest checkout failures retain safe diagnostics for thrown objects and pre
   assert.match(foundersAction, /unknownErrorDetails/);
   assert.match(foundersAction, /failedStage: stage/);
   assert.match(foundersAction, /environmentPresent:/);
-  assert.match(foundersAction, /target_plan_code: plan\.code/);
+  assert.match(foundersAction, /FIREBASE_PROJECT_ID/);
   assert.match(foundersAction, /stripeCheckoutSessionCreationAttempted/);
   assert.match(foundersAction, /failureTiming: stripeApiCallAttempted \? "after_stripe_api_call" : "before_stripe_api_call"/);
   assert.match(foundersAction, /"loading_configuration"/);
   assert.match(foundersAction, /"database_lookup"/);
-  assert.match(foundersAction, /asCheckoutError\(stage, attachError\)/);
+  assert.match(foundersAction, /releaseFounderReservation/);
   assert.match(foundersAction, /Secure checkout is temporarily unavailable\. Please try again shortly\./);
 });
 

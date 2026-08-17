@@ -47,7 +47,7 @@ test("public messaging reflects the launch network and relationship-driven posit
   assert.match(companyPage, /Starting where local coordination matters every day/);
   assert.match(membershipsPage, /FoundingMemberAvailability/);
   assert.match(membershipsPage, /Connect Member Benefit/);
-  assert.match(membershipsPage, /Current availability is confirmed by the enrollment system/);
+  assert.match(membershipsPage, /reserved atomically before Stripe Checkout opens/);
   assert.doesNotMatch(publicSource, /9,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
   assert.doesNotMatch(publicSource, /18,?000\s*(?:rental\s*)?(?:apartments|doors|rentals|units)/i);
   assert.doesNotMatch(publicSource, /guaranteed (?:NILA|Northern Illinois Landlord Association) adoption/i);

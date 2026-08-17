@@ -80,12 +80,12 @@ test("guest checkout uses the selected canonical plan for Stripe and membership 
   assert.match(foundersAction, /getVendorPlanProductId\(plan\)/);
   assert.match(foundersAction, /getVendorPlanPriceId\(plan\)/);
   assert.match(foundersAction, /planKey: plan\.key/);
-  assert.match(foundersAction, /target_plan_code: plan\.code/);
-  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
+  assert.match(foundersAction, /reserveFounderCategory/);
+  assert.match(foundersAction, /founderReservationId: reservation\.reservationId/);
   assert.match(foundersAction, /createVendorMembershipCheckout\(checkoutPayload\)/);
 });
 
-test("public membership purchase buttons use the centralized Stripe Payment Links", () => {
+test("Founder uses governed checkout while Preferred and Network retain centralized Payment Links", () => {
   for (const offer of ["Founding Member", "Preferred", "Network", "founderPrice", "$49/month", "$19/month", "Join Preferred", "Join Network"]) assert.match(membershipsPage, new RegExp(offer.replaceAll("$", "\\$")));
   assert.deepEqual(VENDOR_MEMBERSHIP_PAYMENT_LINKS, {
     founding_partner: "https://buy.stripe.com/cNi28kcXwgUb55L1W343S07",
@@ -94,12 +94,12 @@ test("public membership purchase buttons use the centralized Stripe Payment Link
   });
   assert.deepEqual(VENDOR_MEMBERSHIP_PLANS.map(plan => [plan.key, plan.checkoutUrl]), Object.entries(VENDOR_MEMBERSHIP_PAYMENT_LINKS));
   assert.match(membershipsPage, /href=\{plan\.checkoutUrl\}/);
-  assert.match(membershipsPage, /href=\{FOUNDING_PARTNER_PLAN\.checkoutUrl\}/);
-  assert.doesNotMatch(membershipsPage, /GuestFoundingCheckoutForm/);
-  assert.match(pricingPage, /FoundingMemberAvailability ctaHref=\{plan\.checkoutUrl\}/);
+  assert.doesNotMatch(membershipsPage, /VENDOR_MEMBERSHIP_PAYMENT_LINKS\.founding_partner/);
+  assert.match(membershipsPage, /GuestFoundingCheckoutForm categories=\{founderAvailability\.available\}/);
+  assert.match(pricingPage, /FoundingMemberAvailability ctaHref="\/memberships#founder-checkout"/);
   assert.match(pricingPage, /<a href=\{plan\.checkoutUrl\}/);
-  assert.match(foundingMemberAvailability, /limited to one eligible business per selected category/i);
-  assert.match(foundingMemberAvailability, /Payment does not by itself guarantee category eligibility or exclusivity/i);
+  assert.match(foundingMemberAvailability, /reserved atomically before Stripe Checkout opens/i);
+  assert.match(foundingMemberAvailability, /Only one Founding Member can occupy each category/i);
   assert.match(foundersPage, /permanentRedirect\("\/memberships"\)/);
 });
 
@@ -204,12 +204,12 @@ test("Founder sales page states the recurring annual offer and its limits", () =
   assert.match(membershipsPage, /Applications may be reviewed/i);
 });
 
-test("automated guest checkout remains available for repair but is not publicly rendered", () => {
-  assert.doesNotMatch(membershipsPage, /GuestFoundingCheckoutForm/);
-  assert.match(foundersAction, /create_guest_vendor_membership_checkout/);
-  assert.match(foundersAction, /target_plan_code: plan\.code/);
-  assert.match(foundersAction, /membership\/claim\?session_id=\{CHECKOUT_SESSION_ID\}/);
-  assert.match(foundersAction, /cancelUrl: `\$\{origin\}\/founders\?checkout=cancelled`/);
+test("automated governed Founder checkout is publicly rendered", () => {
+  assert.match(membershipsPage, /GuestFoundingCheckoutForm/);
+  assert.match(foundersAction, /reserveFounderCategory/);
+  assert.match(foundersAction, /attachFounderStripeCheckout/);
+  assert.match(foundersAction, /successUrl: `\$\{origin\}\/memberships\?checkout=processing`/);
+  assert.match(foundersAction, /cancelUrl: `\$\{origin\}\/memberships\?checkout=cancelled`/);
   assert.match(guestClaimMigration, /vendor_membership_guest_claims/);
   assert.match(guestClaimMigration, /record_guest_founding_vendor_payment/);
   assert.match(guestClaimMigration, /claim\.purchaser_email<>lower\(trim\(target_user_email\)\)/);

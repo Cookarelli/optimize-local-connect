@@ -14,7 +14,7 @@ const completeApplication = {
   website: "https://example.com",
   businessDescription: "Local home-service company serving residential and commercial customers.",
   yearsInBusiness: "7",
-  primaryServiceCategory: "Plumbing",
+  primaryServiceCategory: "Plumbing / Sewer",
   additionalServiceCategories: [],
   servicesOffered: ["Water heater repair"],
   serviceAreaCities: ["Dallas, TX"],
