@@ -39,8 +39,20 @@ export type FounderMembershipStatus = "pending" | "active" | "manually_granted" 
 export const FOUNDER_CATEGORY_SLUGS = new Set<string>(FOUNDER_CATEGORY_CATALOG.map((category) => category.slug));
 export const FOUNDER_CATEGORY_DISPLAY_NAMES = FOUNDER_CATEGORY_CATALOG.map((category) => category.displayName) as [FounderCategoryDisplayName, ...FounderCategoryDisplayName[]];
 
+const LEGACY_FOUNDER_CATEGORY_ALIASES: Readonly<Record<string, FounderCategorySlug>> = {
+  plumbing: "plumbing-sewer",
+  landscaping: "landscaping-snow",
+};
+
 export function isFounderCategorySlug(value: string): value is FounderCategorySlug {
   return FOUNDER_CATEGORY_SLUGS.has(value);
+}
+
+export function normalizeFounderCategorySlug(value: string): FounderCategorySlug {
+  const normalized = value.trim().toLowerCase();
+  const canonical = LEGACY_FOUNDER_CATEGORY_ALIASES[normalized] ?? normalized;
+  if (!isFounderCategorySlug(canonical)) throw new Error(`Unknown Founder category: ${value}`);
+  return canonical;
 }
 
 export function initialFounderCategoryState(slug: FounderCategorySlug) {

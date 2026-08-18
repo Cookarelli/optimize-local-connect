@@ -16,7 +16,7 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
-type NotificationInput = {
+export type NotificationInput = {
   type: NotificationType;
   entityId: string;
   version: string;
@@ -25,6 +25,7 @@ type NotificationInput = {
   recipientOrganizationId?: string | null;
   templateKey: string;
   templateData: Record<string, string | number | boolean | null>;
+  notifyPlatformAdmins?: boolean;
 };
 
 export function notificationId(input: Pick<NotificationInput, "type" | "entityId" | "version" | "recipientUserId" | "recipientEmail" | "recipientOrganizationId">) {

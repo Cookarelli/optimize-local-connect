@@ -190,3 +190,10 @@ export type ServiceRequestPrivateDocument = {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
+
+export type ServiceRequestSubmissionDocument = {
+  requestId: string;
+  submittedBy: string;
+  propertyManagerOrganizationId: string;
+  createdAt: Timestamp;
+};

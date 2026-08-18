@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
+import { normalizeFounderCategorySlug } from "../../src/domain/founder-categories/catalog";
 import { organizationMembershipId, normalizeServiceArea, slugify, stableDigest } from "../../src/lib/firebase/platform";
 import { emptyVendorProfile } from "../../src/lib/firebase/vendor-profiles";
 import { getMigrationFirestore } from "./admin";
@@ -24,6 +25,11 @@ const warnings: string[] = [];
 const writes: PlannedWrite[] = [];
 const mappedOrg = (legacy: string) => data.founderMappings[legacy] ?? legacy;
 const mappedMembership = (legacy: string) => data.founderMembershipMappings[legacy] ?? legacy;
+const importedCategory = (value: unknown, fallback: string | null) => {
+  if (value === null || value === undefined || value === "") return fallback;
+  if (typeof value !== "string") throw new Error("Imported category slug must be a string.");
+  return normalizeFounderCategorySlug(value);
+};
 const sourceTimestamp = (value: unknown) => {
   if (typeof value !== "string") return migrationNow;
   const date = new Date(value);
@@ -89,8 +95,9 @@ for (const membership of data.vendor_memberships) {
   const id = mappedMembership(membership.id); const tier = membership.tier ?? membership.level_code ?? "network";
   const priority = membership.priority ?? (tier === "founding_partner" ? 30 : tier === "preferred" ? 20 : 10);
   const hasStripeReference = Boolean(membership.stripe_customer_id || membership.external_subscription_id || membership.stripe_price_id || membership.stripe_checkout_session_id);
+  const categorySlug = importedCategory(membership.category_slug, null);
   writes.push({ path: `memberships/${id}`, data: {
-    organizationId: mappedOrg(membership.vendor_organization_id), tier, priority, status: membership.status ?? "pending", categorySlug: membership.category_slug ?? null,
+    organizationId: mappedOrg(membership.vendor_organization_id), tier, priority, status: membership.status ?? "pending", categorySlug,
     paymentSource: membership.source ?? (hasStripeReference ? "stripe" : null), listPriceCents: membership.list_price_cents ?? membership.amount_cents ?? 0,
     actualAmountPaidCents: membership.actual_amount_paid_cents ?? null, currency: membership.currency ?? "USD",
     stripe: hasStripeReference ? { customerId: membership.stripe_customer_id ?? null, checkoutSessionId: membership.stripe_checkout_session_id ?? null, subscriptionId: membership.external_subscription_id ?? null, priceId: membership.stripe_price_id ?? null } : null,
@@ -104,10 +111,11 @@ for (const request of data.property_manager_service_requests) {
   const assignedVendor = typeof request.assigned_vendor_organization_id === "string" ? mappedOrg(request.assigned_vendor_organization_id) : null;
   const acceptedVendor = typeof request.accepted_vendor_organization_id === "string" ? mappedOrg(request.accepted_vendor_organization_id) : null;
   const assignmentId = assignedVendor ? `assignment_${stableDigest(`${request.id}|${assignedVendor}|migration`)}` : null;
+  const categorySlug = importedCategory(request.category_slug, "migration-review")!;
   const rawStatus = String(request.status ?? "submitted"); const status = rawStatus === "cancelled" ? "canceled" : acceptedVendor && ["assigned", "accepted"].includes(rawStatus) ? "accepted" : rawStatus;
   writes.push({ path: `serviceRequests/${request.id}`, data: {
     propertyManagerOrganizationId: mappedOrg(request.organization_id), propertyId: request.property_id ?? "migration-review", propertyName: request.manual_property_name ?? request.property_name ?? "Property",
-    categorySlug: request.category_slug ?? "migration-review", categoryName: request.category_name ?? "Migration review", serviceAreaKey: request.service_area_key ?? "migration-review",
+    categorySlug, categoryName: request.category_name ?? "Migration review", serviceAreaKey: request.service_area_key ?? "migration-review",
     problemDescription: request.problem_description ?? "", priority: request.priority ?? "flexible", contactPreference: request.preferred_contact ?? "email", status,
     activeAssignmentId: assignmentId, lastAssignmentId: assignmentId, acceptedVendorOrganizationId: acceptedVendor, acceptedVendorName: request.accepted_vendor_name ?? null,
     declinedVendorOrganizationIds: request.declined_vendor_organization_id ? [mappedOrg(String(request.declined_vendor_organization_id))] : [], submittedBy: request.requested_by ?? "migration",
@@ -121,7 +129,7 @@ for (const request of data.property_manager_service_requests) {
   } });
   if (assignmentId && assignedVendor) writes.push({ path: `serviceRequestAssignments/${assignmentId}`, data: {
     requestId: request.id, propertyManagerOrganizationId: mappedOrg(request.organization_id), vendorOrganizationId: assignedVendor, vendorName: request.assigned_vendor_name ?? request.accepted_vendor_name ?? "Assigned vendor",
-    categorySlug: request.category_slug ?? "migration-review", serviceAreaKey: request.service_area_key ?? "migration-review", status: acceptedVendor ? "accepted" : "assigned",
+    categorySlug, serviceAreaKey: request.service_area_key ?? "migration-review", status: acceptedVendor ? "accepted" : "assigned",
     assignedBy: request.assigned_by ?? "migration", assignedAt: sourceTimestamp(request.assigned_at), respondedAt: acceptedVendor ? sourceTimestamp(request.accepted_at) : null,
     responseNote: null, revokedAt: null, createdAt: sourceTimestamp(request.assigned_at), updatedAt: migrationNow,
   } });

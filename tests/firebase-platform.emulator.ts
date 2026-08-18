@@ -15,6 +15,8 @@ const rules = await readFile(new URL("../firestore.rules", import.meta.url), "ut
 const environment = await initializeTestEnvironment({ projectId, firestore: { host: "127.0.0.1", port: 8080, rules } });
 const { getPlatformFirestore } = await import("../src/lib/firebase/admin");
 const { emptyVendorProfile, rebuildPublicMarketplaceProjection } = await import("../src/lib/firebase/vendor-profiles");
+const { establishPropertyManagerOrganization } = await import("../src/lib/firebase/organizations");
+const { createFirebaseProperty, listFirebaseProperties } = await import("../src/lib/firebase/properties");
 const {
   assignFirebaseServiceRequest,
   getFirebaseServiceRequestForPm,
@@ -26,6 +28,7 @@ const {
 } = await import("../src/lib/firebase/service-requests");
 const { reserveFirebaseRequestMediaUpload, validateFirebaseImage } = await import("../src/lib/firebase/storage");
 const { searchFirebaseMarketplace } = await import("../src/lib/firebase/marketplace");
+const { deliverPendingFirebaseNotifications } = await import("../src/lib/firebase/notification-delivery");
 const { getApps, deleteApp } = await import("firebase-admin/app");
 const db = getPlatformFirestore();
 
@@ -48,11 +51,14 @@ async function seedOrganizationAccess(user: AppUser, organizationId: string, typ
 async function seedPmFoundation() {
   await seedOrganizationAccess(pm, "pm-org", "property_manager");
   await seedOrganizationAccess(otherPm, "other-org", "property_manager");
+  await db.doc(`users/${pm.id}`).set({ email: pm.email, displayName: pm.fullName, status: "active", createdAt: now(), updatedAt: now() });
+  await db.doc(`users/${otherPm.id}`).set({ email: otherPm.email, displayName: otherPm.fullName, status: "active", createdAt: now(), updatedAt: now() });
   await db.doc("properties/property-one").set({ organizationId: "pm-org", name: "Oak Apartments", address: { line1: "1 Oak St", line2: null, city: "Madison", stateCode: "WI", postalCode: "53703" }, serviceAreaKey: "madison-wi", status: "active", createdBy: pm.id, createdAt: now(), updatedAt: now() });
 }
 
 async function seedEligibleVendor(user: AppUser, organizationId: string, tier: "founding_partner" | "preferred" | "network", priority: 30 | 20 | 10) {
   await seedOrganizationAccess(user, organizationId, "vendor");
+  await db.doc(`users/${user.id}`).set({ email: user.email, displayName: user.fullName, status: "active", createdAt: now(), updatedAt: now() });
   const access = user.memberships.find((item) => item.organizationId === organizationId)!;
   const membershipId = `${organizationId}-membership`;
   await db.doc(`organizations/${organizationId}`).update({ activeMembershipId: membershipId });
@@ -63,8 +69,8 @@ async function seedEligibleVendor(user: AppUser, organizationId: string, tier: "
   assert.equal(result.published, true);
 }
 
-async function submitRequest() {
-  return submitFirebaseServiceRequest({ user: pm, organizationId: "pm-org", propertyId: "property-one", categorySlug: "plumbing-sewer", categoryName: "Plumbing / Sewer", problemDescription: "A drain line is backing up in the first-floor utility room.", priority: "today", contactPreference: "email", contactName: "Property Manager", contactEmail: pm.email, accessInstructions: "Call before arrival." }, db);
+async function submitRequest(submissionKey?: string) {
+  return submitFirebaseServiceRequest({ user: pm, organizationId: "pm-org", propertyId: "property-one", categorySlug: "plumbing-sewer", categoryName: "Plumbing / Sewer", problemDescription: "A drain line is backing up in the first-floor utility room.", priority: "today", contactPreference: "email", contactName: "Property Manager", contactEmail: pm.email, accessInstructions: "Call before arrival.", submissionKey }, db);
 }
 
 test.beforeEach(async () => {
@@ -90,6 +96,25 @@ test("tenant rules deny cross-organization and inactive access while allowing pl
   await assertFails(getDoc(doc(inactiveClient, "organizations", "pm-org")));
   await assertSucceeds(getDoc(doc(adminClient, "serviceRequestPrivate", requestId)));
   await assert.rejects(() => getFirebaseServiceRequestForPm(otherPm, "pm-org", requestId, db), /access/i);
+});
+
+test("request submission retries return the original request without duplicating records", async () => {
+  const key = "demo_submission_key_0001";
+  const first = await submitRequest(key);
+  const retry = await submitRequest(key);
+  assert.equal(retry, first);
+  assert.equal((await db.collection("serviceRequests").get()).size, 1);
+  assert.equal((await db.collection("serviceRequestSubmissions").get()).size, 1);
+});
+
+test("a new property manager can create an organization and first property", async () => {
+  const newPm = appUser("new-pm");
+  const created = await establishPropertyManagerOrganization({ user: newPm, organizationName: "New PM Demo" });
+  const owner = appUser("new-pm", [membership(created.organizationMembershipId, created.organizationId, "New PM Demo", "property_management", "owner")]);
+  await createFirebaseProperty({ user: owner, organizationId: created.organizationId, name: "First Demo Property", addressLine1: "10 Main St", city: "Rockford", stateCode: "IL", postalCode: "61101" }, db);
+  const properties = await listFirebaseProperties(owner, created.organizationId, db);
+  assert.equal(properties.length, 1);
+  assert.equal(properties[0]?.serviceAreaKey, "rockford-il");
 });
 
 test("marketplace projection enforces eligibility, tier order, and public-field isolation", async () => {
@@ -133,6 +158,28 @@ test("request acceptance protects private data, is idempotent, and reaches compl
   const notificationTypes = (await db.collection("notifications").get()).docs.map((item) => item.data().type).sort();
   assert.deepEqual(notificationTypes, ["opportunity_accepted", "opportunity_assigned", "request_completed", "request_in_progress"]);
   assert.ok((await db.collection(`serviceRequests/${requestId}/events`).get()).size >= 5);
+});
+
+test("notification outbox delivers authorized templates exactly once", async () => {
+  await seedEligibleVendor(vendorOne, "vendor-one", "preferred", 20);
+  const requestId = await submitRequest();
+  await markFirebaseServiceRequestReviewing({ user: admin, requestId }, db);
+  await assignFirebaseServiceRequest({ user: admin, requestId, vendorOrganizationId: "vendor-one" }, db);
+  await respondToFirebaseOpportunity({ user: vendorOne, requestId, action: "accept" }, db);
+  await transitionFirebaseServiceRequest({ user: vendorOne, requestId, status: "in_progress" }, db);
+  await transitionFirebaseServiceRequest({ user: vendorOne, requestId, status: "completed" }, db);
+  const sent: Array<{ to: string[]; subject: string; html: string; idempotencyKey: string }> = [];
+  const provider = { send: async (email: { to: string[]; subject: string; html: string; text: string; idempotencyKey: string }) => { sent.push(email); return { id: `provider-${email.idempotencyKey.slice(0, 12)}` }; } };
+  assert.deepEqual(await deliverPendingFirebaseNotifications({ db, provider, appUrl: "https://staging.example.test", workerId: "notification-test" }), { workerId: "notification-test", sent: 4, failed: 0 });
+  assert.equal(sent.length, 4);
+  assert.ok(sent.some((email) => email.to.includes(vendorOne.email) && /new opportunity/i.test(email.subject)));
+  assert.ok(sent.some((email) => email.to.includes(pm.email) && /accepted/i.test(email.subject)));
+  for (const email of sent) {
+    assert.doesNotMatch(email.html, /1 Oak St|Property Manager|pm-owner@example\.test/);
+    assert.match(email.html, /Optimize Local Connect/);
+  }
+  assert.deepEqual(await deliverPendingFirebaseNotifications({ db, provider, appUrl: "https://staging.example.test", workerId: "notification-retry" }), { workerId: "notification-retry", sent: 0, failed: 0 });
+  assert.equal((await db.collection("notifications").where("status", "==", "sent").get()).size, 4);
 });
 
 test("decline retries are idempotent and reassignment leaves one active assignment", async () => {

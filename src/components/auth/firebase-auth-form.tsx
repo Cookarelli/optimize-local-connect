@@ -21,7 +21,7 @@ async function createServerSession(idToken: string) {
   if (!response.ok) throw new Error(result.error ?? "Unable to establish a secure session.");
 }
 
-export function FirebaseAuthForm({ next, allowSignup }: { next: string; allowSignup: boolean }) {
+export function FirebaseAuthForm({ next, allowSignup, googleEnabled }: { next: string; allowSignup: boolean; googleEnabled: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -80,8 +80,7 @@ export function FirebaseAuthForm({ next, allowSignup }: { next: string; allowSig
       <Button type="submit" className="w-full" disabled={pending}>{pending ? <LoaderCircle className="mr-2 size-4 animate-spin"/> : null}{mode === "signup" ? "Create account" : "Sign in"}<ArrowRight className="ml-2 size-4"/></Button>
     </form>
     {allowSignup ? <button type="button" className="w-full text-sm font-semibold text-emerald-700" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setMessage(null); }}>{mode === "signup" ? "Already have an account? Sign in" : "Need an account? Create one"}</button> : null}
-    <div className="flex items-center gap-3 text-xs uppercase tracking-[.16em] text-slate-400"><span className="h-px flex-1 bg-slate-200"/>or<span className="h-px flex-1 bg-slate-200"/></div>
-    <Button type="button" variant="secondary" className="w-full" disabled={pending} onClick={google}><span aria-hidden="true" className="mr-2 grid size-5 place-items-center rounded-full border border-slate-300 text-xs font-bold">G</span>Continue with Google</Button>
+    {googleEnabled ? <><div className="flex items-center gap-3 text-xs uppercase tracking-[.16em] text-slate-400"><span className="h-px flex-1 bg-slate-200"/>or<span className="h-px flex-1 bg-slate-200"/></div><Button type="button" variant="secondary" className="w-full" disabled={pending} onClick={google}><span aria-hidden="true" className="mr-2 grid size-5 place-items-center rounded-full border border-slate-300 text-xs font-bold">G</span>Continue with Google</Button></> : null}
     {message ? <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{message}</p> : null}
   </div>;
 }

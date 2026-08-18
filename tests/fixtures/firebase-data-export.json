@@ -24,7 +24,7 @@
     { "id": "legacy-founder-membership", "vendor_organization_id": "legacy-founder-org", "tier": "founding_partner", "status": "active", "priority": 30, "category_slug": "flooring", "currency": "USD", "source": "stripe", "stripe_customer_id": "cus_test_source_collision", "external_subscription_id": "sub_test_source_collision", "stripe_price_id": "price_test_source_collision" }
   ],
   "property_manager_service_requests": [
-    { "id": "66666666-6666-4666-8666-666666666666", "organization_id": "22222222-2222-4222-8222-222222222222", "property_id": "44444444-4444-4444-8444-444444444444", "property_name": "Migration Property", "category_slug": "plumbing-sewer", "category_name": "Plumbing / Sewer", "service_area_key": "madison-wi", "problem_description": "Imported request for migration rehearsal.", "priority": "flexible", "preferred_contact": "email", "contact_email": "migration-user@example.test", "status": "submitted" }
+    { "id": "66666666-6666-4666-8666-666666666666", "organization_id": "22222222-2222-4222-8222-222222222222", "property_id": "44444444-4444-4444-8444-444444444444", "property_name": "Migration Property", "category_slug": "plumbing", "category_name": "Plumbing / Sewer", "service_area_key": "madison-wi", "problem_description": "Imported request for migration rehearsal.", "priority": "flexible", "preferred_contact": "email", "contact_email": "migration-user@example.test", "status": "submitted" }
   ],
   "property_manager_service_request_history": [
     { "id": "history-one", "request_id": "66666666-6666-4666-8666-666666666666", "status": "submitted", "note": "Imported history", "created_at": "2026-08-02T12:00:00.000Z" }

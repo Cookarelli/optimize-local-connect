@@ -3,7 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { Timestamp, type Firestore, type Transaction } from "firebase-admin/firestore";
 import type { AppUser } from "@/src/domain/auth/types";
-import type { PublicMarketplaceVendorDocument, ServiceRequestAssignmentDocument, ServiceRequestDocument, ServiceRequestEventDocument, ServiceRequestPrivateDocument, ServiceRequestPriority, ServiceRequestStatus } from "@/src/domain/firebase-platform/types";
+import type { PublicMarketplaceVendorDocument, ServiceRequestAssignmentDocument, ServiceRequestDocument, ServiceRequestEventDocument, ServiceRequestPrivateDocument, ServiceRequestPriority, ServiceRequestStatus, ServiceRequestSubmissionDocument } from "@/src/domain/firebase-platform/types";
 import { getPlatformFirestore } from "@/src/lib/firebase/admin";
 import { requireOrganizationMembership, requirePlatformAdmin } from "@/src/lib/firebase/authorization";
 import { setNotificationInTransaction, type NotificationType } from "@/src/lib/firebase/notifications";
@@ -29,6 +29,7 @@ export async function submitFirebaseServiceRequest(input: {
   contactPhone?: string | null;
   contactEmail?: string | null;
   accessInstructions?: string | null;
+  submissionKey?: string | null;
 }, db: Firestore = getPlatformFirestore()) {
   requireOrganizationMembership(input.user, input.organizationId, ["owner", "admin", "manager", "staff", "property_manager"]);
   const categorySlug = slugify(input.categorySlug);
@@ -36,53 +37,67 @@ export async function submitFirebaseServiceRequest(input: {
   const categoryName = FOUNDER_CATEGORY_CATALOG.find((category) => category.slug === categorySlug)!.displayName;
   if (input.contactPreference === "phone" && !input.contactPhone) throw new Error("Phone is required when phone is preferred.");
   if (input.contactPreference === "email" && !input.contactEmail) throw new Error("Email is required when email is preferred.");
-  const [property, organization] = await Promise.all([db.doc(`properties/${input.propertyId}`).get(), db.doc(`organizations/${input.organizationId}`).get()]);
-  const propertyData = property.data();
-  if (!organization.exists || organization.data()?.type !== "property_manager" || organization.data()?.status !== "active") throw new Error("Property-management organization is unavailable.");
-  if (!propertyData || propertyData.organizationId !== input.organizationId || propertyData.status !== "active") throw new Error("Property is unavailable.");
+  const submissionKey = input.submissionKey?.trim() || randomUUID();
+  if (!/^[a-zA-Z0-9_-]{16,100}$/.test(submissionKey)) throw new Error("Invalid request submission key.");
   const requestId = randomUUID();
   const now = Timestamp.now();
-  const safe: ServiceRequestDocument = {
-    propertyManagerOrganizationId: input.organizationId,
-    propertyId: input.propertyId,
-    propertyName: propertyData.name,
-    categorySlug,
-    categoryName,
-    serviceAreaKey: propertyData.serviceAreaKey,
-    problemDescription: normalizedText(input.problemDescription),
-    priority: input.priority,
-    contactPreference: input.contactPreference,
-    status: "submitted",
-    activeAssignmentId: null,
-    lastAssignmentId: null,
-    acceptedVendorOrganizationId: null,
-    acceptedVendorName: null,
-    declinedVendorOrganizationIds: [],
-    submittedBy: input.user.id,
-    submittedAt: now,
-    updatedAt: now,
-    completedAt: null,
-    canceledAt: null,
-  };
-  const privateData: ServiceRequestPrivateDocument = {
-    propertyManagerOrganizationId: input.organizationId,
-    acceptedVendorOrganizationId: null,
-    exactAddress: [propertyData.address.line1, propertyData.address.line2, `${propertyData.address.city}, ${propertyData.address.stateCode} ${propertyData.address.postalCode}`].filter(Boolean).join(", "),
-    unit: input.unit ? normalizedText(input.unit) : null,
-    contactName: normalizedText(input.contactName),
-    contactPhone: input.contactPhone?.trim() ?? null,
-    contactEmail: input.contactEmail?.trim().toLowerCase() ?? null,
-    accessInstructions: input.accessInstructions ? normalizedText(input.accessInstructions) : null,
-    attachmentPaths: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-  const batch = db.batch();
-  batch.create(db.doc(`serviceRequests/${requestId}`), safe);
-  batch.create(db.doc(`serviceRequestPrivate/${requestId}`), privateData);
-  batch.create(db.doc(`serviceRequests/${requestId}/events/${randomUUID()}`), { type: "submitted", status: "submitted", actorUserId: input.user.id, actorOrganizationId: input.organizationId, note: "Request submitted", vendorVisible: false, createdAt: now });
-  await batch.commit();
-  return requestId;
+  const requestRef = db.doc(`serviceRequests/${requestId}`);
+  const submissionRef = db.doc(`serviceRequestSubmissions/${input.user.id}_${submissionKey}`);
+  return db.runTransaction(async (transaction) => {
+    const [propertySnapshot, organizationSnapshot, previousSubmission] = await Promise.all([
+      transaction.get(db.doc(`properties/${input.propertyId}`)),
+      transaction.get(db.doc(`organizations/${input.organizationId}`)),
+      transaction.get(submissionRef),
+    ]);
+    const prior = previousSubmission.data() as ServiceRequestSubmissionDocument | undefined;
+    if (prior) {
+      if (prior.submittedBy !== input.user.id || prior.propertyManagerOrganizationId !== input.organizationId) throw new Error("Request submission key is unavailable.");
+      return prior.requestId;
+    }
+    const propertyData = propertySnapshot.data();
+    if (!organizationSnapshot.exists || organizationSnapshot.data()?.type !== "property_manager" || organizationSnapshot.data()?.status !== "active") throw new Error("Property-management organization is unavailable.");
+    if (!propertyData || propertyData.organizationId !== input.organizationId || propertyData.status !== "active") throw new Error("Property is unavailable.");
+    const safe: ServiceRequestDocument = {
+      propertyManagerOrganizationId: input.organizationId,
+      propertyId: input.propertyId,
+      propertyName: propertyData.name,
+      categorySlug,
+      categoryName,
+      serviceAreaKey: propertyData.serviceAreaKey,
+      problemDescription: normalizedText(input.problemDescription),
+      priority: input.priority,
+      contactPreference: input.contactPreference,
+      status: "submitted",
+      activeAssignmentId: null,
+      lastAssignmentId: null,
+      acceptedVendorOrganizationId: null,
+      acceptedVendorName: null,
+      declinedVendorOrganizationIds: [],
+      submittedBy: input.user.id,
+      submittedAt: now,
+      updatedAt: now,
+      completedAt: null,
+      canceledAt: null,
+    };
+    const privateData: ServiceRequestPrivateDocument = {
+      propertyManagerOrganizationId: input.organizationId,
+      acceptedVendorOrganizationId: null,
+      exactAddress: [propertyData.address.line1, propertyData.address.line2, `${propertyData.address.city}, ${propertyData.address.stateCode} ${propertyData.address.postalCode}`].filter(Boolean).join(", "),
+      unit: input.unit ? normalizedText(input.unit) : null,
+      contactName: normalizedText(input.contactName),
+      contactPhone: input.contactPhone?.trim() ?? null,
+      contactEmail: input.contactEmail?.trim().toLowerCase() ?? null,
+      accessInstructions: input.accessInstructions ? normalizedText(input.accessInstructions) : null,
+      attachmentPaths: [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    transaction.create(requestRef, safe);
+    transaction.create(db.doc(`serviceRequestPrivate/${requestId}`), privateData);
+    transaction.create(db.doc(`serviceRequests/${requestId}/events/${randomUUID()}`), { type: "submitted", status: "submitted", actorUserId: input.user.id, actorOrganizationId: input.organizationId, note: "Request submitted", vendorVisible: false, createdAt: now });
+    transaction.create(submissionRef, { requestId, submittedBy: input.user.id, propertyManagerOrganizationId: input.organizationId, createdAt: now } satisfies ServiceRequestSubmissionDocument);
+    return requestId;
+  });
 }
 
 export async function listEligibleFirebaseVendors(input: { requestId: string; user: AppUser }, db: Firestore = getPlatformFirestore()) {

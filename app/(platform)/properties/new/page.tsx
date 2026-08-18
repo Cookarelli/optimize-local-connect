@@ -8,12 +8,12 @@ import { FirebasePropertyForm } from "@/src/components/firebase-platform/propert
 
 const inputClass = "mt-1.5 min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-base outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
 
-export default async function NewPropertyPage() {
+export default async function NewPropertyPage({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const user = await requireUser();
   const membership = user.memberships[0];
   if (!membership) return null;
   authorize(user, "properties:create", membership.organizationId);
-  if (isFirebaseOperationalBackend()) return <FirebasePropertyForm membership={membership} />;
+  if (isFirebaseOperationalBackend()) return <FirebasePropertyForm membership={membership} welcome={(await searchParams).welcome === "1"} />;
   const supabase = await createSupabaseServerClient();
   const { data: markets, error } = await supabase.from("organization_markets").select("market_id, markets(name, market_cities(city_id, is_primary, cities(name, state_code)))").eq("organization_id", membership.organizationId);
   if (error) throw new Error(error.message);

@@ -17,6 +17,7 @@
     "test:migration": "FIREBASE_CLI_DISABLE_UPDATE_CHECK=1 XDG_CONFIG_HOME=/private/tmp/olc-firebase-config firebase emulators:exec --only auth,firestore --project demo-optimize-local-connect \"node --conditions=react-server --import tsx --test tests/firebase-migration.emulator.ts\"",
     "seed:founders": "node --conditions=react-server --import tsx scripts/seed-founder-categories.ts",
     "seed:firebase:staging": "node --conditions=react-server --import tsx scripts/seed-firebase-staging.ts",
+    "deliver:firebase:notifications": "node --conditions=react-server --import tsx scripts/deliver-firebase-notifications.ts",
     "rehearse:firebase:staging": "node --conditions=react-server --import tsx scripts/rehearse-firebase-staging.ts",
     "verify:firebase:staging-rules": "node --conditions=react-server --import tsx scripts/verify-firebase-staging-rules.ts",
     "configure:firebase:staging-auth": "node --conditions=react-server --import tsx scripts/configure-firebase-staging-auth.ts",

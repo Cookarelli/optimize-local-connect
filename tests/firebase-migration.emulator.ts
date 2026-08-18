@@ -61,6 +61,7 @@ test("Data migration imports one request model and produces stable checksums on 
   const retry = run("scripts/firebase-migration/import-data.ts", dataFixture, true);
   assert.equal(applied.plannedWritesChecksum, retry.plannedWritesChecksum);
   assert.equal((await db.collection("serviceRequests").get()).size, 1);
+  assert.equal((await db.doc("serviceRequests/66666666-6666-4666-8666-666666666666").get()).data()?.categorySlug, "plumbing-sewer");
   assert.equal((await db.collection("serviceRequests/66666666-6666-4666-8666-666666666666/events").get()).size, 1);
   assert.equal((await db.doc("organizations/33333333-3333-4333-8333-333333333333").get()).data()?.activeMembershipId, "55555555-5555-4555-8555-555555555555");
   assert.equal((await db.doc("organizations/founder-authoritative-org").get()).data()?.name, "Authoritative Founder");

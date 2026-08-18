@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { FOUNDER_CATEGORY_CATALOG, initialFounderCategoryState } from "../src/domain/founder-categories/catalog";
+import { FOUNDER_CATEGORY_CATALOG, initialFounderCategoryState, normalizeFounderCategorySlug } from "../src/domain/founder-categories/catalog";
 
 const checkoutAction = readFileSync(new URL("../app/founders/actions.ts", import.meta.url), "utf8");
 const checkoutForm = readFileSync(new URL("../src/components/founding-partner/guest-checkout-form.tsx", import.meta.url), "utf8");
@@ -26,6 +26,14 @@ test("canonical Founder catalog contains exactly the approved 25 ordered categor
 test("Catering replaces Excavation in the canonical Founder source", () => {
   assert.ok(FOUNDER_CATEGORY_CATALOG.some((category) => category.displayName === "Catering / Party Catering" && category.slug === "catering-party-catering"));
   assert.ok(!FOUNDER_CATEGORY_CATALOG.some((category) => /excavation|drainage/i.test(`${category.displayName} ${category.slug}`)));
+});
+
+test("legacy migration category aliases normalize to canonical Founder slugs", () => {
+  assert.equal(normalizeFounderCategorySlug("plumbing"), "plumbing-sewer");
+  assert.equal(normalizeFounderCategorySlug("plumbing-sewer"), "plumbing-sewer");
+  assert.equal(normalizeFounderCategorySlug("landscaping"), "landscaping-snow");
+  assert.equal(normalizeFounderCategorySlug("landscaping-snow"), "landscaping-snow");
+  assert.throws(() => normalizeFounderCategorySlug("unknown-category"), /Unknown Founder category/);
 });
 
 test("current Founder onboarding validation and dropdowns use the canonical catalog", () => {

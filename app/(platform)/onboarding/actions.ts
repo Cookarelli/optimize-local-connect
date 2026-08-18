@@ -7,6 +7,7 @@ import { requireUser } from "@/src/lib/auth/session";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { continueVendorMembershipCheckout, VendorCheckoutError } from "@/src/lib/stripe/vendor-membership-checkout";
 import { establishVendorOrganization } from "@/src/lib/firebase/organizations";
+import { establishPropertyManagerOrganization } from "@/src/lib/firebase/organizations";
 import { startFirebaseCommercialMembershipCheckout } from "@/src/lib/firebase/membership-checkout";
 import { isFirebaseOperationalBackend } from "@/src/lib/firebase/platform";
 
@@ -36,6 +37,14 @@ export type VendorEnrollmentState = {
   message?: string;
   fieldErrors?: Record<string, string>;
 };
+
+export async function createFirebasePropertyManagerOrganization(formData: FormData) {
+  const user = await requireUser();
+  if (!isFirebaseOperationalBackend()) throw new Error("Property-manager Firebase onboarding is not active.");
+  const organizationName = z.string().trim().min(2, "Enter your organization name.").max(160).parse(formData.get("organizationName"));
+  await establishPropertyManagerOrganization({ user, organizationName });
+  redirect("/properties/new?welcome=1");
+}
 
 export async function createVendorOrganizationAndCheckout(_state: VendorEnrollmentState, formData: FormData): Promise<VendorEnrollmentState> {
   const user = await requireUser();

@@ -4,7 +4,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import type { AppUser } from "@/src/domain/auth/types";
 import { getPlatformFirestore } from "@/src/lib/firebase/admin";
 import { requireOrganizationMembership } from "@/src/lib/firebase/authorization";
-import { normalizedText, organizationMembershipId, slugify, vendorOrganizationId } from "@/src/lib/firebase/platform";
+import { normalizedText, organizationMembershipId, slugify, stableDigest, vendorOrganizationId } from "@/src/lib/firebase/platform";
 
 export async function setFirebaseActiveOrganization(user: AppUser, organizationId: string) {
   requireOrganizationMembership(user, organizationId);
@@ -60,6 +60,48 @@ export async function establishVendorOrganization(input: {
       updatedAt: now,
     }, { merge: true });
     transaction.set(userRef, { activeOrganizationId: organizationId, updatedAt: now }, { merge: true });
+  });
+  return { organizationId, organizationMembershipId: membershipId };
+}
+
+export async function establishPropertyManagerOrganization(input: { user: AppUser; organizationName: string }) {
+  const db = getPlatformFirestore();
+  const organizationName = normalizedText(input.organizationName);
+  const organizationId = `pm_${stableDigest(`${input.user.id}|${organizationName.toLowerCase()}`)}`;
+  const membershipId = organizationMembershipId(organizationId, input.user.id);
+  const organizationRef = db.doc(`organizations/${organizationId}`);
+  const membershipRef = db.doc(`organizationMemberships/${membershipId}`);
+  const now = Timestamp.now();
+  await db.runTransaction(async (transaction) => {
+    const [organization, membership] = await Promise.all([transaction.get(organizationRef), transaction.get(membershipRef)]);
+    if (organization.exists && (!membership.exists || membership.data()?.status !== "active")) throw new Error("That property-management organization already exists and is not owned by this account.");
+    transaction.set(organizationRef, {
+      type: "property_manager",
+      status: "active",
+      name: organizationName,
+      normalizedName: organizationName.toLowerCase(),
+      slug: organization.data()?.slug ?? slugify(organizationName),
+      legalName: organization.data()?.legalName ?? null,
+      primaryEmail: input.user.email.toLowerCase(),
+      primaryPhone: organization.data()?.primaryPhone ?? null,
+      websiteUrl: organization.data()?.websiteUrl ?? null,
+      activeMembershipId: null,
+      pendingMembershipId: null,
+      ...(organization.exists ? {} : { createdAt: now }),
+      updatedAt: now,
+    }, { merge: true });
+    transaction.set(membershipRef, {
+      organizationId,
+      userId: input.user.id,
+      organizationType: "property_manager",
+      role: "owner",
+      status: "active",
+      invitedAt: null,
+      acceptedAt: membership.data()?.acceptedAt ?? now,
+      ...(membership.exists ? {} : { createdAt: now }),
+      updatedAt: now,
+    }, { merge: true });
+    transaction.set(db.doc(`users/${input.user.id}`), { activeOrganizationId: organizationId, updatedAt: now }, { merge: true });
   });
   return { organizationId, organizationMembershipId: membershipId };
 }

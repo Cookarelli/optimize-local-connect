@@ -19,7 +19,7 @@ export function SignInForm({ next = "/dashboard", allowSignup = false }: { next?
     initialState,
   );
   if (process.env.NEXT_PUBLIC_OPERATIONAL_BACKEND === "firebase") {
-    return <FirebaseAuthForm next={next} allowSignup={allowSignup} />;
+    return <FirebaseAuthForm next={next} allowSignup={allowSignup} googleEnabled={process.env.NEXT_PUBLIC_FIREBASE_GOOGLE_SIGN_IN_ENABLED === "true"} />;
   }
   const state = magicState.status !== "idle" ? magicState : passwordState;
 
